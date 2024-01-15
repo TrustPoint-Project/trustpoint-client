@@ -3,6 +3,7 @@ from os.path import exists
 import requests
 import hashlib
 import hmac
+import trustpoint_client.key as key
 
 def getTrustStore(tpurl :str ="127.0.0.1:5000", uriext: str ="", hexpass: str="", hexsalt: str="") -> bool:
     click.echo('Retrieving Trustpoint Trust Store')
@@ -13,6 +14,7 @@ def getTrustStore(tpurl :str ="127.0.0.1:5000", uriext: str ="", hexpass: str=""
     # Truststore file not present, obtain it
     click.echo('trust-store.pem missing, downloading from Trustpoint...')
     response = requests.get('https://' + tpurl + '/trust-point/rest/provision/trust-store/' + uriext, verify=False)
+    if response.status_code != 200: raise Exception("Server returned HTTP code " + str(response.status_code))
 
     # DEBUG USE ONLY!!!
     # response.headers["hmac-signature"] = "fe411166f41436e81edd3303f74858979f01a993f98998891f4f8c514f0fe7b8" # (for content "It's a Truststore baby." with pass "abc" and salt "def")
@@ -46,6 +48,7 @@ def getTrustStore(tpurl :str ="127.0.0.1:5000", uriext: str ="", hexpass: str=""
         click.echo("\nPLEASE VERIFY BELOW HASH AGAINST THAT DISPLAYED BY TRUSTPOINT\n")
         click.echo(hash)
         feedback = click.prompt("\nDo the hashes match EXACTLY? (y/n)")
+        # TODO maybe consider adding https://github.com/ansemjo/randomart (not as lib, but as src)
         if feedback != 'Y' and feedback != 'y': raise Exception("Hash does not match the one displayed by Trustpoint, aborting.")
     else:
         raise Exception("Invalid verification level.")
@@ -56,10 +59,47 @@ def getTrustStore(tpurl :str ="127.0.0.1:5000", uriext: str ="", hexpass: str=""
     click.echo('Thank you, the trust store was downloaded successfully.')
     return True
 
+
+def requestLDevID(tpurl: str, otp: str, salt: str, url: str):
+    click.echo("Generating private key and CSR for LDevID")
+    csr = key.generateNewKeyAndCSR()
+    # Let Trustpoint sign our CSR (auth via OTP and salt as username via HTTP basic auth)
+    click.echo("Uploading CSR to Trustpoint for signing")
+
+    #csr = open('ldevid-csr.pem', 'rb')
+    try:
+        files = {'file': csr}
+        crt = requests.post('https://' + tpurl + '/trust-point/rest/provision/ldevid/' + url, auth=(salt, otp), files=files, verify='trust-store.pem')
+        if crt.status_code != 200: raise Exception("Server returned HTTP code " + str(crt.status_code))
+    except:
+        raise
+    finally:
+        pass
+    
+    #csr.close()
+    #remove('ldevid-csr.pem')
+
+    with open('ldevid.pem', 'wb') as f: # write downloaded truststore to FS
+        f.write(crt.content)
+        click.echo("LDevID certificate downloaded successfully")
+
+
+def requestCertChain(tpurl: str) -> None:
+    click.echo("Downloading LDevID certificate chain")
+    chain = requests.get('https://' + tpurl + '/trust-point/rest/provision/ldevid/cert-chain', verify='trust-store.pem', cert=('ldevid.pem','ldevid-private-key.pem'))
+    if chain.status_code != 200: raise Exception("Server returned HTTP code " + str(chain.status_code))
+
+    with open('ldevid-certificate-chain.pem', 'wb') as f: # write downloaded truststore to FS
+        f.write(chain.content)
+        click.echo("Certificate chain downloaded successfully")
+
+
 def provision(otp: str, salt: str, url: str, tpurl :str, uriext: str, hexpass: str, hexsalt: str) -> None:
     """Provisions the Trustpoint-Client software."""
     click.echo('Provisioning client...')
     # Step 1: Get trustpoint Trust Store
     res = getTrustStore(tpurl, uriext, hexpass, hexsalt)
-    print(res)
-    pass
+    # Step 2: Request locally significant device identifier (LDevID)
+    requestLDevID(tpurl, otp, salt, url)
+    # Step 3: Download LDevID Certificate chain
+    requestCertChain(tpurl)
