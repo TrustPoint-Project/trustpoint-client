@@ -1,6 +1,6 @@
 # trustpoint-client
 
-# Installation
+## Installation
 1. Clone git repo: https://github.com/TrustPoint-Project/trustpoint-client
 2. Change into the trustpoint-client directory
    ```

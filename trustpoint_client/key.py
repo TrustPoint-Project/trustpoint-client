@@ -6,6 +6,9 @@ from cryptography import x509
 from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes
 
+import click
+import datetime
+
 # Create RSA key-pair and corresponding CSR, write to disk as ldevid-private-key.pem and ldevid-csr.pem
 # Returns the CSR to reduce file operations
 # TODO Security risk! Generate key in HSM instead if available
@@ -33,3 +36,25 @@ def generateNewKeyAndCSR() -> bytes:
     #with open("ldevid-csr.pem", "wb") as f:
     #    f.write(csr.public_bytes(serialization.Encoding.PEM))
     return csr.public_bytes(serialization.Encoding.PEM)
+
+# Checks valididity time against system time only. Does NOT verify chain of trust.
+def checkCertificateUnexpired(certbytes : bytes) -> bool:
+    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    now = now.replace(tzinfo=None)
+    if now.year < 2024: # extremely naive check, it does not cover (even significant) clock drift, but at least should catch uninitialized time
+        click.echo("Cannot validate the certificate as system time is not set correctly.")
+        click.echo('Current system time year is ' + now.year)
+        return False
+    certificate = x509.load_pem_x509_certificate(certbytes)
+
+    if certificate.not_valid_after < now:
+        click.echo("Certificate is expired since" + certificate.not_valid_after.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        return False
+    elif now < certificate.not_valid_before:
+        # Are there certificates with a notBefore significantly after creation in practice? This is disallowed in the Web PKI, but could be used in a private PKI
+        click.echo("Certificate not yet valid, starting" + certificate.not_valid_before.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        return False
+    else:
+        daysToExpiration = (certificate.not_valid_after - datetime.datetime.now())
+        click.echo("Cert expires " + str(certificate.not_valid_after) + ", " + str(daysToExpiration) + " days from now.")
+    return True

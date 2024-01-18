@@ -1,29 +1,8 @@
 import click
 from trustpoint_client.trustpoint_client import provision as _provision
+import trustpoint_client.callback_test as cb
 
-version = "0.1.0"
-
-asciiLogo : str = """\b
- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@ @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@
-@@@@     @@ @   @@ @@@ @@@   @@@     @@@@
-@@@@@ @@@@@  @@@@@ @@@ @@ @@@ @@@ @@@@@@@
-@@@@@ @@@@@ @@@@@@ @@@ @@@  @@@@@ @@@@@@@
-@@@@@ @@ @@ @@@@@@ @@  @@@@@  @@@ @@ @@@@
-@@@@@@  @@@ @@@@@@@  @ @@    @@@@@  @@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
-    
-                    @            
-                                 @
-    @ @@    @@@   @@@    @ @@   @@@@@
-    @@  @  @   @    @    @@  @   @
-    @   @  @   @    @    @   @   @  @
-    @@@@    @@@   @@@@@  @   @    @@
-    @
-    @
-"""
+versionID = "0.1.0"
 
 def drawAsciiLogo() -> None:
     click.echo("""\b
@@ -53,7 +32,27 @@ def drawAsciiLogo() -> None:
 
 @click.group()
 def cli() -> None:
-    asciiLogo
+    """\b
+     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    @@@@@ @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@
+    @@@@     @@ @   @@ @@@ @@@   @@@     @@@@
+    @@@@@ @@@@@  @@@@@ @@@ @@ @@@ @@@ @@@@@@@
+    @@@@@ @@@@@ @@@@@@ @@@ @@@  @@@@@ @@@@@@@
+    @@@@@ @@ @@ @@@@@@ @@  @@@@@  @@@ @@ @@@@
+    @@@@@@  @@@ @@@@@@@  @ @@    @@@@@  @@@@@
+    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+        
+                        @            
+                                     @
+        @ @@    @@@   @@@    @ @@   @@@@@
+        @@  @  @   @    @    @@  @   @
+        @   @  @   @    @    @   @   @  @
+        @@@@    @@@   @@@@@  @   @    @@
+        @
+        @
+    """
 
 
 @cli.command()
@@ -67,16 +66,17 @@ def cli() -> None:
 def provision(otp: str, salt: str, url: str, tpurl :str ="127.0.0.1:5000", uriext: str ="", hexpass: str="", hexsalt: str="") -> None:
     """Provisions the Trustpoint-Client software."""
     try:
-        _provision(otp, salt, url, tpurl, uriext, hexpass, hexsalt) # TODO: Quite a lot of parameters. Maybe better to pass an options list?
+        _provision(otp, salt, url, tpurl, uriext, hexpass, hexsalt, cb.testCallback) # TODO: Quite a lot of parameters. Maybe better to pass an options list?
     except Exception as e:
         click.echo(f'Failed to provision the Trustpoint-Client.\n{e}')
         return
     click.echo('Successfully provisioned the Trustpoint-Client.')
 
 @cli.command()
-def logo() -> None:
-    click.echo('The subcommand')
+def version() -> None:
+    """Displays the version of Trustpoint-Client."""
     drawAsciiLogo()
+    click.echo("Welcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) v" + str(versionID) +"!\n")
 
 if __name__ == '__main__':
     cli()
