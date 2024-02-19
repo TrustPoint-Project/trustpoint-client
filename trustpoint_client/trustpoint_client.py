@@ -24,7 +24,7 @@ def getTrustStore(tpurl :str ="127.0.0.1:5000", uriext: str ="", hexpass: str=""
     
     # Truststore file not present, obtain it
     click.echo('trust-store.pem missing, downloading from Trustpoint...')
-    response = requests.get('https://' + tpurl + '/rest/provision/trust-store/' + uriext, verify=False)
+    response = requests.get('https://' + tpurl + '/onboarding/api/trust-store/' + uriext, verify=False)
     if response.status_code != 200: raise Exception("Server returned HTTP code " + str(response.status_code))
 
     # DEBUG USE ONLY!!!
@@ -77,7 +77,7 @@ def requestLDevID(tpurl: str, otp: str, salt: str, url: str):
     # Let Trustpoint sign our CSR (auth via OTP and salt as username via HTTP basic auth)
     click.echo("Uploading CSR to Trustpoint for signing")
     files = {'ldevid.csr': csr}
-    crt = requests.post('https://' + tpurl + '/rest/provision/ldevid/' + url, auth=(salt, otp), files=files, verify='trust-store.pem')
+    crt = requests.post('https://' + tpurl + '/onboarding/api/ldevid/' + url, auth=(salt, otp), files=files, verify='trust-store.pem')
     if crt.status_code != 200: raise Exception("Server returned HTTP code " + str(crt.status_code))
 
     with open('ldevid.pem', 'wb') as f: # write downloaded certificate to FS
@@ -91,7 +91,7 @@ def requestLDevID(tpurl: str, otp: str, salt: str, url: str):
 
 def requestCertChain(tpurl: str, url: str) -> None:
     click.echo("Downloading LDevID certificate chain")
-    chain = requests.get('https://' + tpurl + '/rest/provision/ldevid/cert-chain/' + url, verify='trust-store.pem', cert=('ldevid.pem','ldevid-private-key.pem'))
+    chain = requests.get('https://' + tpurl + '/onboarding/api/ldevid/cert-chain/' + url, verify='trust-store.pem', cert=('ldevid.pem','ldevid-private-key.pem'))
     if chain.status_code != 200: raise Exception("Server returned HTTP code " + str(chain.status_code))
 
     with open('ldevid-certificate-chain.pem', 'wb') as f: # write downloaded trust chain to FS
