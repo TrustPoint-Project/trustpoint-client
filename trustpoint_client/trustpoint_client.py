@@ -24,7 +24,7 @@ def getTrustStore(tpurl :str ="127.0.0.1:5000", uriext: str ="", hexpass: str=""
     
     # Truststore file not present, obtain it
     click.echo('trust-store.pem missing, downloading from Trustpoint...')
-    response = requests.get('https://' + tpurl + '/trust-point/rest/provision/trust-store/' + uriext, verify=False)
+    response = requests.get('https://' + tpurl + '/rest/provision/trust-store/' + uriext, verify=False)
     if response.status_code != 200: raise Exception("Server returned HTTP code " + str(response.status_code))
 
     # DEBUG USE ONLY!!!
@@ -76,19 +76,22 @@ def requestLDevID(tpurl: str, otp: str, salt: str, url: str):
     csr = key.generateNewKeyAndCSR()
     # Let Trustpoint sign our CSR (auth via OTP and salt as username via HTTP basic auth)
     click.echo("Uploading CSR to Trustpoint for signing")
-
-    files = {'file': csr}
-    crt = requests.post('https://' + tpurl + '/trust-point/rest/provision/ldevid/' + url, auth=(salt, otp), files=files, verify='trust-store.pem')
+    files = {'ldevid.csr': csr}
+    crt = requests.post('https://' + tpurl + '/rest/provision/ldevid/' + url, auth=(salt, otp), files=files, verify='trust-store.pem')
     if crt.status_code != 200: raise Exception("Server returned HTTP code " + str(crt.status_code))
 
     with open('ldevid.pem', 'wb') as f: # write downloaded certificate to FS
         f.write(crt.content)
         click.echo("LDevID certificate downloaded successfully")
 
+    with open('ldevid.pem', 'rb') as certfile:
+        certUnexpired = key.checkCertificateUnexpired(certfile.read())
+        if not certUnexpired: raise Exception("Provided LDevID certificate is not currently valid.")
+
 
 def requestCertChain(tpurl: str) -> None:
     click.echo("Downloading LDevID certificate chain")
-    chain = requests.get('https://' + tpurl + '/trust-point/rest/provision/ldevid/cert-chain', verify='trust-store.pem', cert=('ldevid.pem','ldevid-private-key.pem'))
+    chain = requests.get('https://' + tpurl + '/rest/provision/ldevid/cert-chain', verify='trust-store.pem', cert=('ldevid.pem','ldevid-private-key.pem'))
     if chain.status_code != 200: raise Exception("Server returned HTTP code " + str(chain.status_code))
 
     with open('ldevid-certificate-chain.pem', 'wb') as f: # write downloaded trust chain to FS
@@ -99,7 +102,9 @@ def requestCertChain(tpurl: str) -> None:
 def provision(otp: str, salt: str, url: str, tpurl :str, uriext: str, hexpass: str, hexsalt: str, callback=None) -> None:
     """Provisions the Trustpoint-Client software."""
     click.echo('Provisioning client...')
+    if callback: callback(ProvisioningState.NOT_PROVISIONED)
     click.echo('Current system time is ' + datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+    if not uriext: uriext = url
     try:
         # Step 1: Get trustpoint Trust Store
         res = getTrustStore(tpurl, uriext, hexpass, hexsalt)

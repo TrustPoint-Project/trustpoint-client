@@ -14,6 +14,7 @@ packaging==23.2
 pycparser==2.21
 Pygments==2.17.2
 requests==2.31.0
+revpimodio2==2.7.1
 snowballstemmer==2.2.0
 Sphinx==7.2.6
 sphinxcontrib-applehelp==1.0.7
