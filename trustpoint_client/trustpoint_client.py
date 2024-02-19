@@ -89,9 +89,9 @@ def requestLDevID(tpurl: str, otp: str, salt: str, url: str):
         if not certUnexpired: raise Exception("Provided LDevID certificate is not currently valid.")
 
 
-def requestCertChain(tpurl: str) -> None:
+def requestCertChain(tpurl: str, url: str) -> None:
     click.echo("Downloading LDevID certificate chain")
-    chain = requests.get('https://' + tpurl + '/rest/provision/ldevid/cert-chain', verify='trust-store.pem', cert=('ldevid.pem','ldevid-private-key.pem'))
+    chain = requests.get('https://' + tpurl + '/rest/provision/ldevid/cert-chain/' + url, verify='trust-store.pem', cert=('ldevid.pem','ldevid-private-key.pem'))
     if chain.status_code != 200: raise Exception("Server returned HTTP code " + str(chain.status_code))
 
     with open('ldevid-certificate-chain.pem', 'wb') as f: # write downloaded trust chain to FS
@@ -113,7 +113,7 @@ def provision(otp: str, salt: str, url: str, tpurl :str, uriext: str, hexpass: s
         requestLDevID(tpurl, otp, salt, url)
         if callback: callback(ProvisioningState.HAS_LDEVID)
         # Step 3: Download LDevID Certificate chain
-        requestCertChain(tpurl)
+        requestCertChain(tpurl, url)
         if callback: callback(ProvisioningState.HAS_CERT_CHAIN)
     except:
         if callback: callback(ProvisioningState.ERROR)
