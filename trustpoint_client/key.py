@@ -40,21 +40,21 @@ def generateNewKeyAndCSR() -> bytes:
 # Checks valididity time against system time only. Does NOT verify chain of trust.
 def checkCertificateUnexpired(certbytes : bytes) -> bool:
     now = datetime.datetime.now(tz=datetime.timezone.utc)
-    now = now.replace(tzinfo=None)
+    #now = now.replace(tzinfo=None)
     if now.year < 2024: # extremely naive check, it does not cover (even significant) clock drift, but at least should catch uninitialized time
         click.echo("Cannot validate the certificate as system time is not set correctly.")
         click.echo('Current system time year is ' + now.year)
         return False
     certificate = x509.load_pem_x509_certificate(certbytes)
 
-    if certificate.not_valid_after < now:
-        click.echo("Certificate is expired since" + certificate.not_valid_after.strftime("%Y-%m-%dT%H:%M:%SZ"))
+    if certificate.not_valid_after_utc < now:
+        click.echo("Certificate is expired since" + certificate.not_valid_after_utc.strftime("%Y-%m-%dT%H:%M:%SZ"))
         return False
-    elif now < certificate.not_valid_before:
+    elif now < certificate.not_valid_before_utc:
         # Are there certificates with a notBefore significantly after creation in practice? This is disallowed in the Web PKI, but could be used in a private PKI
-        click.echo("Certificate not yet valid, starting" + certificate.not_valid_before.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        click.echo("Certificate not yet valid, starting" + certificate.not_valid_before_utc.strftime("%Y-%m-%dT%H:%M:%SZ"))
         return False
     else:
-        daysToExpiration = (certificate.not_valid_after - datetime.datetime.now())
-        click.echo("Cert expires " + str(certificate.not_valid_after) + ", " + str(daysToExpiration) + " days from now.")
+        daysToExpiration = (certificate.not_valid_after_utc - now)
+        click.echo("Cert expires " + str(certificate.not_valid_after_utc) + ", " + str(daysToExpiration) + " days from now.")
     return True
