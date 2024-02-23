@@ -28,11 +28,11 @@ Just download the package from Trustpoint during onboarding and transfer it to t
 
 1. Clone git repo: https://github.com/TrustPoint-Project/trustpoint-client
 2. Change into the trustpoint-client directory
-   ```bash
+   ```shell
    cd trustpoint-client
    ```
 3. Install virtual environment and required dependencies
-    ```bash
+    ```shell
    sudo apt install python3-venv
    python3 -m venv .venv
    source .venv/bin/activate
@@ -43,7 +43,7 @@ Just download the package from Trustpoint during onboarding and transfer it to t
    Trustpoint will generate and display the exact command for you during the onboarding process.
 
    Note that trustpoint_client executed below is the directory (as package), not the trustpoint_client.py file
-   ```bash
+   ```shell
    python3 -m trustpoint_client
    python3 -m trustpoint_client provision --otp abc --salt fgh --url xyz
    ```
