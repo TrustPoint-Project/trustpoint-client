@@ -71,9 +71,9 @@ def getTrustStore(tpurl :str ="127.0.0.1:5000", uriext: str ="", hexpass: str=""
     return True
 
 
-def requestLDevID(tpurl: str, otp: str, salt: str, url: str):
+def requestLDevID(tpurl: str, otp: str, salt: str, url: str, sn: str):
     click.echo("Generating private key and CSR for LDevID")
-    csr = key.generateNewKeyAndCSR()
+    csr = key.generateNewKeyAndCSR(sn)
     # Let Trustpoint sign our CSR (auth via OTP and salt as username via HTTP basic auth)
     click.echo("Uploading CSR to Trustpoint for signing")
     files = {'ldevid.csr': csr}
@@ -99,7 +99,7 @@ def requestCertChain(tpurl: str, url: str) -> None:
         click.echo("Certificate chain downloaded successfully")
 
 
-def provision(otp: str, salt: str, url: str, tpurl :str, uriext: str, hexpass: str, hexsalt: str, callback=None) -> None:
+def provision(otp: str, salt: str, url: str, tpurl :str, uriext: str, hexpass: str, hexsalt: str, sn: str, callback=None) -> None:
     """Provisions the Trustpoint-Client software."""
     click.echo('Provisioning client...')
     if callback: callback(ProvisioningState.NOT_PROVISIONED)
@@ -110,7 +110,7 @@ def provision(otp: str, salt: str, url: str, tpurl :str, uriext: str, hexpass: s
         res = getTrustStore(tpurl, uriext, hexpass, hexsalt)
         if callback: callback(ProvisioningState.HAS_TRUSTSTORE)
         # Step 2: Request locally significant device identifier (LDevID)
-        requestLDevID(tpurl, otp, salt, url)
+        requestLDevID(tpurl, otp, salt, url, sn)
         if callback: callback(ProvisioningState.HAS_LDEVID)
         # Step 3: Download LDevID Certificate chain
         requestCertChain(tpurl, url)

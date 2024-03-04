@@ -63,10 +63,11 @@ def cli() -> None:
 @click.option('--uriext', '-e', required=False, type=str, help='The uri extension for obtaining the trust store.')
 @click.option('--tsotp', '-p', required=False, type=str, help='The OTP for deriving the trust store key.')
 @click.option('--tssalt', '-z', required=False, type=str, help='The salt for deriving the trust store key.') # TODO: Analyze if OK to re-use or derive from main salt
-def provision(otp: str, salt: str, url: str, tpurl :str ="127.0.0.1:5000", uriext: str ="", tsotp: str="", tssalt: str="") -> None:
+@click.option('--sn', '-n', required=False, type=str, help='The serial number of the device.')
+def provision(otp: str, salt: str, url: str, tpurl :str ="127.0.0.1:5000", uriext: str ="", tsotp: str="", tssalt: str="", sn: str="") -> None:
     """Provisions the Trustpoint-Client software."""
     try:
-        _provision(otp, salt, url, tpurl, uriext, tsotp, tssalt, cb.testCallback) # TODO: Quite a lot of parameters. Maybe better to pass an options list?
+        _provision(otp, salt, url, tpurl, uriext, tsotp, tssalt, sn, cb.testCallback) # TODO: Quite a lot of parameters. Maybe better to pass an options list?
     except Exception as e:
         click.echo(f'Failed to provision the Trustpoint-Client.\n{e}')
         return

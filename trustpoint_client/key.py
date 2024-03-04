@@ -8,16 +8,19 @@ from cryptography.hazmat.primitives import hashes
 
 import click
 import datetime
+import secrets
+
+from pathlib import Path
 
 # Create RSA key-pair and corresponding CSR, write to disk as ldevid-private-key.pem and ldevid-csr.pem
 # Returns the CSR to reduce file operations
 # TODO Security risk! Generate key in HSM instead if available
-def generateNewKeyAndCSR() -> bytes:
+def generateNewKeyAndCSR(serial: str = '') -> bytes:
     key = ec.generate_private_key(
         ec.SECP256R1()
     )
 
-    with open("ldevid-private-key.pem", "wb") as f:
+    with Path("ldevid-private-key.pem").open("wb") as f:
         f.write(key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.TraditionalOpenSSL,
@@ -26,9 +29,23 @@ def generateNewKeyAndCSR() -> bytes:
             #encryption_algorithm=serialization.BestAvailableEncryption(b"bad1deaThisSe3msLike"), # TODO derive private key encryption pwd from something
         ))
 
+    if not serial:
+        try:
+            with Path("tpclient-serial-no.txt").open("r") as f:
+                serial = f.read()
+        except FileNotFoundError:
+            pass
+        
+        if not serial: serial = "tpclient_" + secrets.token_urlsafe(12)
+
+    with Path("tpclient-serial-no.txt").open("w") as f:
+        f.write(serial)
+
+    click.echo("Device Serial number: " + serial)
+
     # Generate a CSR
     csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
-        x509.NameAttribute(NameOID.SERIAL_NUMBER, "0"),
+        x509.NameAttribute(NameOID.SERIAL_NUMBER, serial),
         x509.NameAttribute(NameOID.COMMON_NAME, "client.trustpoint.ldevid.local"),
     ])).sign(key, hashes.SHA256())
 
