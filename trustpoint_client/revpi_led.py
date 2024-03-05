@@ -1,11 +1,15 @@
+"""This module provides a simple interface to control the LEDs on a RevolutionPi Connect 4."""
+
 try:
     import revpimodio2
 except ImportError:
     rpi = None
 from enum import IntEnum
 
+# ruff: noqa: PLR2004 (disable magic value check for LED numbers)
 
 class RevPiLEDColor(IntEnum):
+    """Enum for the possible color values of the RevolutionPi Connect 4 LEDs."""
     OFF     = 0
     RED     = 1
     GREEN   = 2
@@ -37,22 +41,22 @@ def clear(color: RevPiLEDColor = RevPiLEDColor.OFF) -> None:
     rpi.core.A5 = color
 
 
-rainbowCounter: int = 7
+rainbow_counter: int = 7
 
 
 def rainbow_step() -> None:
     """Draws a rainbow to LEDs A3-A5. Each call advances it by one step."""
     if not rpi: return
-    global rainbowCounter
-    rainbowCounter -= 1
-    if rainbowCounter == 0: rainbowCounter = 6
+    global rainbow_counter # noqa: PLW0603
+    rainbow_counter -= 1
+    if rainbow_counter == 0: rainbow_counter = 6
     smap = (5, 4, 6, 2, 3, 1)  # magenta, blue, cyan, green, yellow, red
-    rpi.core.A3 = smap[(rainbowCounter + 2) % 6]
-    rpi.core.A4 = smap[(rainbowCounter + 1) % 6]
-    rpi.core.A5 = smap[(rainbowCounter + 0) % 6]
+    rpi.core.A3 = smap[(rainbow_counter + 2) % 6]
+    rpi.core.A4 = smap[(rainbow_counter + 1) % 6]
+    rpi.core.A5 = smap[(rainbow_counter + 0) % 6]
 
 
 try:
     rpi = revpimodio2.RevPiModIO(autorefresh=True)
-except Exception:
+except NameError:
     rpi = None

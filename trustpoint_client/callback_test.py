@@ -1,8 +1,15 @@
-import trustpoint_client.trustpoint_client as tc
-import trustpoint_client.revpi_led as led
+"""Module to test the callback functionality of the trustpoint_client module.
 
-# callback functionality so that some external process can be optionally triggered after part of provisioning is complete
-def testCallback(a :tc.ProvisioningState):
+Sets LEDs on the RevPi Connect 4 to indicate the state of the provisioning process.
+"""
+
+import trustpoint_client.revpi_led as led
+import trustpoint_client.trustpoint_client as tc
+
+
+# optional callback functionality so that an external process can be triggered after part of provisioning is complete
+def test_callback(a: tc.ProvisioningState) -> None:
+    """Sets LEDs on the RevPi Connect 4 to indicate the state of the provisioning process."""
     led.clear()
     if a == tc.ProvisioningState.ERROR:
         led.set_led(3, led.RevPiLEDColor.RED)

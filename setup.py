@@ -1,3 +1,5 @@
+"""Setup file for trustpoint-client package."""
+
 from setuptools import setup
 
 setup(
