@@ -58,5 +58,5 @@ def rainbow_step() -> None:
 
 try:
     rpi = revpimodio2.RevPiModIO(autorefresh=True)
-except NameError:
+except Exception:
     rpi = None

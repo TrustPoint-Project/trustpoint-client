@@ -95,6 +95,7 @@ def get_trust_store(host :str ='127.0.0.1:5000', uriext: str ='', hexpass: str='
         # TODO(Air): this should be an option or given by a trustpoint header with a reasonable minimum sanity check
         pbkdf2_iter = 1000000
         pkey = hashlib.pbkdf2_hmac('sha256', bytes(hexpass,'utf-8'), bytes(hexsalt,'utf-8'), pbkdf2_iter, dklen=32)
+        click.echo('Computed PBKDF2-key: ' + pkey.hex())
         h = hmac.new(pkey, response.content, hashlib.sha256)
         click.echo('Computed HMAC: ' + h.hexdigest())
         if not hmac.compare_digest(h.hexdigest(), response.headers['hmac-signature']):
