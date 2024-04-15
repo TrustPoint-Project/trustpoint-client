@@ -92,5 +92,5 @@ def check_certificate_unexpired(certbytes : bytes) -> bool:
 
     days_to_expiration = (certificate.not_valid_after_utc - now)
     click.echo('Cert expires ' +
-               str(certificate.not_valid_after_utc) + ', ' + str(days_to_expiration) + ' days from now.')
+        str(certificate.not_valid_after_utc) + ', ' + str(days_to_expiration).split(".")[0] + ' h from now.')
     return True

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 import click
 import requests
+import urllib3
 
 from trustpoint_client import key
 
@@ -71,7 +72,8 @@ def get_trust_store(host :str ='127.0.0.1:5000', uriext: str ='', hexpass: str='
 
     # Truststore file not present, obtain it (this request is intentionally not verified)
     click.echo('trust-store.pem missing, downloading from Trustpoint...')
-    response = requests.get('https://' + host + '/onboarding/api/trust-store/' + uriext,
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    response = requests.get('https://' + host + '/api/onboarding/trust-store/' + uriext,
                             verify=False, timeout=6)  # noqa: S501
     if response.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(response.status_code)
@@ -122,7 +124,7 @@ def request_ldevid(host: str, url: str, otp: str, salt: str, sn: str) -> None:
     click.echo('Uploading CSR to Trustpoint for signing')
     files = {'ldevid.csr': csr}
     crt = requests.post(
-              'https://' + host + '/onboarding/api/ldevid/' + url,
+              'https://' + host + '/api/onboarding/ldevid/' + url,
               auth=(salt, otp), files=files, verify='trust-store.pem', timeout=6)
     if crt.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(crt.status_code)
@@ -143,7 +145,7 @@ def request_cert_chain(host: str, url: str) -> None:
     """Requests the LDevID certificate chain from the Trustpoint."""
     click.echo('Downloading LDevID certificate chain')
     chain = requests.get(
-        'https://' + host + '/onboarding/api/ldevid/cert-chain/' + url,
+        'https://' + host + '/api/onboarding/ldevid/cert-chain/' + url,
         verify='trust-store.pem',
         cert=('ldevid.pem','ldevid-private-key.pem'),
         timeout=6)
