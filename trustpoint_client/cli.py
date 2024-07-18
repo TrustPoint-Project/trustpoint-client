@@ -6,6 +6,7 @@ import click
 
 import trustpoint_client.callback_test as cb
 from trustpoint_client.trustpoint_client import provision as _provision
+from trustpoint_client.mdns import find as mdns_find
 
 version_id = '0.1.0'
 
@@ -139,6 +140,13 @@ def rm(*, trust_store: bool, ldevid: bool, sn: bool, all: bool) -> None:
     if sn or all:
         click.echo('Removing device serial number')
         _delete_file('tpclient-serial-no.txt')
+
+
+@cli.command()
+def find() -> None:
+    """Finds Trustpoint servers on the local network."""
+    mdns_find()
+
 
 if __name__ == '__main__':
     cli()
