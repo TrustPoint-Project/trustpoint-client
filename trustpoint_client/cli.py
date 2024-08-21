@@ -6,6 +6,7 @@ import click
 
 import trustpoint_client.callback_test as cb
 from trustpoint_client.trustpoint_client import provision as _provision
+from trustpoint_client.trustpoint_client import ProvisioningState
 
 version_id = '0.1.0'
 
@@ -128,6 +129,7 @@ def version() -> None:
 def rm(*, trust_store: bool, ldevid: bool, sn: bool, all: bool) -> None:
     """Removes local files managed by Trustpoint-Client."""
     click.echo('Secure Removal is not yet implemented.')
+    cb.test_callback(ProvisioningState.NOT_PROVISIONED)
     if trust_store or all:
         click.echo('Removing trust store')
         _delete_file('trust-store.pem')
