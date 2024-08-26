@@ -13,7 +13,7 @@ import click
 import requests
 import urllib3
 
-from . import key
+from trustpoint_client import key
 
 if TYPE_CHECKING:
     from typing import Callable

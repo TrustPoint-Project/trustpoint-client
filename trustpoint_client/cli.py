@@ -5,8 +5,8 @@ from pathlib import Path
 import click
 
 import trustpoint_client.callback_test as cb
-from trustpoint_client.trustpoint_client import provision as _provision
-from trustpoint_client.trustpoint_client import ProvisioningState
+from trustpoint_client.api import provision as _provision
+from trustpoint_client.api import ProvisioningState
 
 version_id = '0.1.0'
 
