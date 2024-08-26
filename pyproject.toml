@@ -1,3 +1,16 @@
+[tool.poetry]
+name = "trustpoint"
+version = "0.0.1"
+description = "Trustpoint Client Software"
+authors = ["TrustPoint-Project"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+click = "^8.1.7"
+cryptography = "^43.0.0"
+requests = "^2.32.3"
+
 [tool.ruff]
 line-length = 120
 indent-width = 4
