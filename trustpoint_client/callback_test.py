@@ -3,9 +3,9 @@
 Sets LEDs on the RevPi Connect 4 to indicate the state of the provisioning process.
 """
 
+import trustpoint_client.api as tc
 import trustpoint_client.revpi_led as led
 import trustpoint_client.rpi_led as rpi
-import trustpoint_client.api as tc
 
 
 # optional callback functionality so that an external process can be triggered after part of provisioning is complete

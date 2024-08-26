@@ -5,10 +5,11 @@ from pathlib import Path
 import click
 
 import trustpoint_client.callback_test as cb
-from trustpoint_client.api import provision as _provision
 from trustpoint_client.api import ProvisioningState
+from trustpoint_client.api import provision as _provision
 
 version_id = '0.1.0'
+
 
 class ProvisioningCLIError(Exception):
     """Raised for all errors in the onboarding / client provisioning process."""
@@ -54,11 +55,13 @@ def draw_ascii_logo() -> None:
         @
 
     """)
-    click.echo('Welcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) v' + version +'!\n')
+    click.echo('Welcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) v' + version + '!\n')
+
 
 @click.group()
 def cli() -> None:
-    """\b
+    r"""\b
+
      @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     @@@@@ @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@
@@ -90,35 +93,47 @@ def cli() -> None:
 # TODO(Air): Analyze if OK to re-use or derive trust store salt from main (LDevID) salt
 @click.option('--tssalt', '-z', required=False, type=str, help='The salt for deriving the trust store key.')
 @click.option('--sn', '-n', required=False, type=str, help='The serial number of the device.')
-def provision(otp: str, salt: str,
-              url: str, host :str ='127.0.0.1:5000',
-              tsotp: str='', tssalt: str='', sn: str='') -> None:
+def provision(      # noqa: PLR0913
+        otp: str,
+        salt: str,
+        url: str,
+        host: str = '127.0.0.1:5000',
+        tsotp: str = '',
+        tssalt: str = '',
+        sn: str = '') -> None:
     """Provisions the Trustpoint-Client software."""
     try:
         _provision(otp, salt, url, host, tsotp, tssalt, sn, cb.test_callback)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         exc_msg = 'Failed to provision the Trustpoint-Client.'
         raise ProvisioningCLIError(exc_msg) from e
 
     click.echo('Successfully provisioned the Trustpoint-Client.')
 
+
 # TODO(Air): perhaps consider ACME for renewal (is quite complex though)
 @cli.command()
-@click.option('--percentage','-p', required=False, type=int,
-              help='The percentage of certificate lifetime after which renewal should be attempted.')
-@click.option('--interval','-i', required=False, type=int,
-              help='The interval in seconds how often to check for expiration')
-def autorenew() -> None:
+@click.option(
+    '--percentage',
+    '-p',
+    required=False,
+    type=int,
+    help='The percentage of certificate lifetime after which renewal should be attempted.',
+)
+@click.option(
+    '--interval', '-i', required=False, type=int, help='The interval in seconds how often to check for expiration'
+)
+def auto_renew() -> None:
     """Monitors certificates for expiry and automatically requests new ones."""
     # Prerequisites: A currently valid LDevID and  Trustpoint server truststore
-    click.echo('Autorenewal is not yet implemented.')
+    click.echo('Auto-renewal is not yet implemented.')
 
 
 @cli.command()
 def version() -> None:
     """Displays the version of Trustpoint-Client."""
     draw_ascii_logo()
-    click.echo('Welcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) v' + str(version_id) +'!\n')
+    click.echo('Welcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) v' + str(version_id) + '!\n')
 
 
 @cli.command()
@@ -126,21 +141,22 @@ def version() -> None:
 @click.option('--ldevid', '-l', is_flag=True, help='Add this flag to delete the LDevID certificate and chain.')
 @click.option('--sn', '-s', is_flag=True, help='Add this flag to delete the device serial number.')
 @click.option('--all', '-a', is_flag=True, help='Add this flag to delete all local files managed by Trustpoint-Client.')
-def rm(*, trust_store: bool, ldevid: bool, sn: bool, all: bool) -> None:
+def rm(*, trust_store: bool, ldevid: bool, sn: bool, all_: bool) -> None:
     """Removes local files managed by Trustpoint-Client."""
     click.echo('Secure Removal is not yet implemented.')
     cb.test_callback(ProvisioningState.NOT_PROVISIONED)
-    if trust_store or all:
+    if trust_store or all_:
         click.echo('Removing trust store')
         _delete_file('trust-store.pem')
-    if ldevid or all:
+    if ldevid or all_:
         click.echo('Removing LDevID certificate and chain')
         _delete_file('ldevid.pem')
         _delete_file('ldevid-private-key.pem')
         _delete_file('ldevid-certificate-chain.pem')
-    if sn or all:
+    if sn or all_:
         click.echo('Removing device serial number')
-        _delete_file('tpclient-serial-no.txt')
+        _delete_file('tp-client-serial-no.txt')
+
 
 if __name__ == '__main__':
     cli()

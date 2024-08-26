@@ -1,10 +1,16 @@
+"""This module provides a simple interface to control the LEDs on a Raspberry Pi."""
 
 PIN_RED = 23
 PIN_YELLOW = 24
 PIN_GREEN = 25
 
+COLOR_RED = 1
+COLOR_YELLOW = 2
+COLOR_GREEN = 3
+
+
 try:
-    import RPi.GPIO as GPIO
+    from RPi import GPIO
 
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(PIN_RED, GPIO.OUT)
@@ -16,14 +22,26 @@ try:
 except ImportError:
     rpi = False
 
-def clear():
-    if not rpi: return
+
+def clear() -> None:
+    """Clears the LED color."""
+    if not rpi:
+        return
     GPIO.output(PIN_RED, GPIO.LOW)
     GPIO.output(PIN_YELLOW, GPIO.LOW)
     GPIO.output(PIN_GREEN, GPIO.LOW)
 
-def set_led(i, color):
-    if not rpi: return
-    if i == 1: GPIO.output(PIN_RED, GPIO.HIGH if color else GPIO.LOW)
-    if i == 2: GPIO.output(PIN_YELLOW, GPIO.HIGH if color else GPIO.LOW)
-    if i == 3: GPIO.output(PIN_GREEN, GPIO.HIGH if color else GPIO.LOW)
+
+def set_led(i: int, color: int) -> None:
+    """Sets the LED color."""
+    if not rpi:
+        return
+
+    if i == COLOR_RED:
+        GPIO.output(PIN_RED, GPIO.HIGH if color else GPIO.LOW)
+
+    if i == COLOR_YELLOW:
+        GPIO.output(PIN_YELLOW, GPIO.HIGH if color else GPIO.LOW)
+
+    if i == COLOR_GREEN:
+        GPIO.output(PIN_GREEN, GPIO.HIGH if color else GPIO.LOW)

@@ -11,9 +11,13 @@ click = "^8.1.7"
 cryptography = "^43.0.0"
 requests = "^2.32.3"
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.2"
+
 [tool.ruff]
 line-length = 120
 indent-width = 4
+
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
@@ -23,9 +27,8 @@ multiline-quotes = "double"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "ANN101", "ANN401",
+    "ANN101", "ANN102", "ANN401",
     "D203", "D213", "D415",
-    "E701",                 # Multiple statements on one line (colon)
     "TD003",
     # TODO(Alex): FIX should be added again, after we are departing from the PoC phase
     "FIX",
@@ -40,3 +43,9 @@ docstring-code-format = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+
+# TODO(Alex): Remove this if we want to use the LED sections
+[tool.ruff.lint.per-file-ignores]
+"revpi_led.py" = ["ERA001"]
+"rpi_led.py" = ["ERA001"]
