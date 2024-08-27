@@ -4,11 +4,32 @@ from pathlib import Path
 
 import click
 
-import trustpoint_client.callback_test as cb
-from trustpoint_client.api import ProvisioningState
 from trustpoint_client.api import provision as _provision
 
 version_id = '0.1.0'
+
+TRUSTPOINT_LOGO = """\b
+     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    @@@@@ @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@
+    @@@@     @@ @   @@ @@@ @@@   @@@     @@@@
+    @@@@@ @@@@@  @@@@@ @@@ @@ @@@ @@@ @@@@@@@
+    @@@@@ @@@@@ @@@@@@ @@@ @@@  @@@@@ @@@@@@@
+    @@@@@ @@ @@ @@@@@@ @@  @@@@@  @@@ @@ @@@@
+    @@@@@@  @@@ @@@@@@@  @ @@    @@@@@  @@@@@
+    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+    \b
+                        @
+                                     @
+        @ @@    @@@   @@@    @ @@   @@@@@
+        @@  @  @   @    @    @@  @   @
+        @   @  @   @    @    @   @   @  @
+        @@@@    @@@   @@@@@  @   @    @@
+        @
+        @
+    """
 
 
 class ProvisioningCLIError(Exception):
@@ -33,55 +54,18 @@ def _delete_file(file: str) -> None:
 
 def draw_ascii_logo() -> None:
     """Draws the Trustpoint ASCII logo."""
-    click.echo("""\b
-     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @@@@@ @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@
-    @@@@     @@ @   @@ @@@ @@@   @@@     @@@@
-    @@@@@ @@@@@  @@@@@ @@@ @@ @@@ @@@ @@@@@@@
-    @@@@@ @@@@@ @@@@@@ @@@ @@@  @@@@@ @@@@@@@
-    @@@@@ @@ @@ @@@@@@ @@  @@@@@  @@@ @@ @@@@
-    @@@@@@  @@@ @@@@@@@  @ @@    @@@@@  @@@@@
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    click.echo(TRUSTPOINT_LOGO)
 
-                        @
-                                     @
-        @ @@    @@@   @@@    @ @@   @@@@@
-        @@  @  @   @    @    @@  @   @
-        @   @  @   @    @    @   @   @  @
-        @@@@    @@@   @@@@@  @   @    @@
-        @
-        @
-
-    """)
-    click.echo('Welcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) v' + version + '!\n')
+def draw_tp_client_description() -> None:
+    """Draws the Trustpoint client description."""
+    click.echo(f'\nWelcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) - v{version_id}!')
+    # draw_ascii_logo()
+    click.echo('')
 
 
-@click.group()
+@click.group(help=draw_tp_client_description())
 def cli() -> None:
-    r"""\b
-
-     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @@@@@ @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@
-    @@@@     @@ @   @@ @@@ @@@   @@@     @@@@
-    @@@@@ @@@@@  @@@@@ @@@ @@ @@@ @@@ @@@@@@@
-    @@@@@ @@@@@ @@@@@@ @@@ @@@  @@@@@ @@@@@@@
-    @@@@@ @@ @@ @@@@@@ @@  @@@@@  @@@ @@ @@@@
-    @@@@@@  @@@ @@@@@@@  @ @@    @@@@@  @@@@@
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-                        @
-                                     @
-        @ @@    @@@   @@@    @ @@   @@@@@
-        @@  @  @   @    @    @@  @   @
-        @   @  @   @    @    @   @   @  @
-        @@@@    @@@   @@@@@  @   @    @@
-        @
-        @
-    """
+    pass
 
 
 @cli.command()
@@ -103,7 +87,7 @@ def provision(      # noqa: PLR0913
         sn: str = '') -> None:
     """Provisions the Trustpoint-Client software."""
     try:
-        _provision(otp, salt, url, host, tsotp, tssalt, sn, cb.test_callback)
+        _provision(otp, salt, url, host, tsotp, tssalt, sn)
     except Exception as e:
         exc_msg = 'Failed to provision the Trustpoint-Client.'
         raise ProvisioningCLIError(exc_msg) from e
@@ -133,7 +117,7 @@ def auto_renew() -> None:
 def version() -> None:
     """Displays the version of Trustpoint-Client."""
     draw_ascii_logo()
-    click.echo('Welcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) v' + str(version_id) + '!\n')
+    click.echo(f'Welcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) v {version_id}!')
 
 
 @cli.command()
@@ -144,7 +128,6 @@ def version() -> None:
 def rm(*, trust_store: bool, ldevid: bool, sn: bool, all_: bool) -> None:
     """Removes local files managed by Trustpoint-Client."""
     click.echo('Secure Removal is not yet implemented.')
-    cb.test_callback(ProvisioningState.NOT_PROVISIONED)
     if trust_store or all_:
         click.echo('Removing trust store')
         _delete_file('trust-store.pem')
