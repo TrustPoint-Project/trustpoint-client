@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "trustpoint_client"
+name = "trustpoint-client"
 version = "0.0.1"
 description = "Trustpoint Client Software"
 authors = ["TrustPoint-Project"]
@@ -34,7 +34,6 @@ ignore = [
     "ANN101", "ANN102", "ANN401",
     "D203", "D213", "D415",
     "TD003",
-    # TODO(Alex): FIX should be added again, after we are departing from the PoC phase
     "FIX",
     "COM812",               # Not compatible with the formatter
     "ISC001"                # Not compatible with the formatter
