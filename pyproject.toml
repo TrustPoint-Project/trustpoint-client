@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "trustpoint-client"
-version = "0.0.3"
+version = "0.0.4"
 description = "Trustpoint Client Software"
 authors = ["TrustPoint-Project"]
 readme = "README.md"
@@ -9,7 +9,7 @@ readme = "README.md"
 python = "^3.12"
 click = "^8.1.7"
 requests = "^2.32.3"
-cryptography = "^42.0.3"
+cryptography = "^43.0.0"
 
 [build-system]
 requires = ["poetry-core"]
