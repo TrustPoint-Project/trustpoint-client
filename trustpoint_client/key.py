@@ -24,19 +24,19 @@ def generate_new_key_and_csr(serial: str = '') -> bytes:
     Returns:
         Certificate signing request as PEM-encoded bytes.
     """
-    key = ec.generate_private_key(
-        ec.SECP256R1()
-    )
+    key = ec.generate_private_key(ec.SECP256R1())
 
     with Path('ldevid-private-key.pem').open('wb') as f:
-        f.write(key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            # TODO(Air): python requests does not support encrypted private keys
-            encryption_algorithm=serialization.NoEncryption(),
-            # TODO(Air): derive private key encryption pwd from something?
-            #encryption_algorithm=serialization.BestAvailableEncryption(b"bad1deaThisSe3msLike"),
-        ))
+        f.write(
+            key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                # TODO(Air): python requests does not support encrypted private keys
+                encryption_algorithm=serialization.NoEncryption(),
+                # TODO(Air): derive private key encryption pwd from something?
+                # encryption_algorithm=serialization.BestAvailableEncryption(b"bad1deaThisSe3msLike") noqa: ERA001
+            )
+        )
 
     if not serial:
         try:
@@ -45,7 +45,8 @@ def generate_new_key_and_csr(serial: str = '') -> bytes:
         except FileNotFoundError:
             pass
 
-        if not serial: serial = 'tpclient_' + secrets.token_urlsafe(12)
+        if not serial:
+            serial = 'tpclient_' + secrets.token_urlsafe(12)
 
     with Path('tpclient-serial-no.txt').open('w') as f:
         f.write(serial)
@@ -53,19 +54,29 @@ def generate_new_key_and_csr(serial: str = '') -> bytes:
     click.echo('Device Serial number: ' + serial)
 
     # Generate a CSR
-    csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
-        x509.NameAttribute(NameOID.SERIAL_NUMBER, serial),
-        x509.NameAttribute(NameOID.COMMON_NAME, 'client.trustpoint.ldevid.local'),
-    ])).sign(key, hashes.SHA256())
+    csr = (
+        x509.CertificateSigningRequestBuilder()
+        .subject_name(
+            x509.Name(
+                [
+                    x509.NameAttribute(NameOID.SERIAL_NUMBER, serial),
+                    x509.NameAttribute(NameOID.COMMON_NAME, 'client.trustpoint.ldevid.local'),
+                ]
+            )
+        )
+        .sign(key, hashes.SHA256())
+    )
 
     # Optionally write CSR to disk.
-    #with open("ldevid-csr.pem", "wb") as f:
-    #    f.write(csr.public_bytes(serialization.Encoding.PEM))
+    # with open("ldevid-csr.pem", "wb") as f:
+    #    f.write(csr.public_bytes(serialization.Encoding.PEM))      # noqa: ERA001
     return csr.public_bytes(serialization.Encoding.PEM)
+
 
 MINIMUM_YEAR = 2024
 
-def check_certificate_unexpired(certbytes : bytes) -> bool:
+
+def check_certificate_unexpired(certbytes: bytes) -> bool:
     """Checks if the certificate is currently in its validity period.
 
     Checks valididity time against system time only. Does NOT verify chain of trust.
@@ -86,11 +97,17 @@ def check_certificate_unexpired(certbytes : bytes) -> bool:
     if now < certificate.not_valid_before_utc:
         # Are there certificates with a notBefore significantly after creation in practice?
         # This is disallowed in the Web PKI, but could be used in a private PKI
-        click.echo('Certificate not yet valid, starts' +
-                   certificate.not_valid_before_utc.strftime('%Y-%m-%dT%H:%M:%SZ'))
+        click.echo(
+            'Certificate not yet valid, starts' + certificate.not_valid_before_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+        )
         return False
 
-    days_to_expiration = (certificate.not_valid_after_utc - now)
-    click.echo('Cert expires ' +
-        str(certificate.not_valid_after_utc) + ', ' + str(days_to_expiration).split(".")[0] + ' h from now.')
+    days_to_expiration = certificate.not_valid_after_utc - now
+    click.echo(
+        'Cert expires '
+        + str(certificate.not_valid_after_utc)
+        + ', '
+        + str(days_to_expiration).split('.')[0]
+        + ' h from now.'
+    )
     return True
