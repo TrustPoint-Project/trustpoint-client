@@ -10,6 +10,7 @@ python = "^3.10"
 click = "^8.1.7"
 requests = "^2.32.3"
 cryptography = "^43.0.0"
+trustpoint-devid-module = "^0.0.2"
 
 [build-system]
 requires = ["poetry-core"]
