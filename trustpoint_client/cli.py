@@ -7,7 +7,9 @@ import click
 from trustpoint_client.mdns import find as mdns_find
 from trustpoint_client.api import provision as _provision
 
-version_id = '0.1.0'
+from trustpoint_client.cli_cmp import cmp
+
+version_id = '0.0.4-dev'
 
 TRUSTPOINT_LOGO = """\b
      @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -147,6 +149,9 @@ def rm(*, trust_store: bool, ldevid: bool, sn: bool, all_: bool) -> None:
 def find() -> None:
     """Finds Trustpoint servers on the local network."""
     mdns_find()
+
+
+cli.add_command(cmp)
 
 
 if __name__ == '__main__':

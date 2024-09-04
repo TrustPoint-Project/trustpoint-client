@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# local cmp_client package for testing
+trustpoint_client/cmp_client/
+
 # (Testing) keys and certificates
 *.pem
 *.csr
