@@ -485,6 +485,31 @@ wcwidth = "*"
 tests = ["pytest", "pytest-cov", "pytest-lazy-fixtures"]
 
 [[package]]
+name = "pyasn1"
+version = "0.6.0"
+description = "Pure-Python implementation of ASN.1 types and DER/BER/CER codecs (X.208)"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pyasn1-0.6.0-py2.py3-none-any.whl", hash = "sha256:cca4bb0f2df5504f02f6f8a775b6e416ff9b0b3b16f7ee80b5a3153d9b804473"},
+    {file = "pyasn1-0.6.0.tar.gz", hash = "sha256:3a35ab2c4b5ef98e17dfdec8ab074046fbda76e281c5a706ccd82328cfc8f64c"},
+]
+
+[[package]]
+name = "pyasn1-modules"
+version = "0.4.0"
+description = "A collection of ASN.1-based protocols modules"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pyasn1_modules-0.4.0-py3-none-any.whl", hash = "sha256:be04f15b66c206eed667e0bb5ab27e2b1855ea54a842e5037738099e8ca4ae0b"},
+    {file = "pyasn1_modules-0.4.0.tar.gz", hash = "sha256:831dbcea1b177b28c9baddf4c6d1013c24c3accd14a1873fffaa6a2e905f17b6"},
+]
+
+[package.dependencies]
+pyasn1 = ">=0.4.6,<0.7.0"
+
+[[package]]
 name = "pycparser"
 version = "2.22"
 description = "C parser in Python"
@@ -861,19 +886,21 @@ files = [
 
 [[package]]
 name = "trustpoint-devid-module"
-version = "0.0.2"
+version = "0.0.4"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "trustpoint_devid_module-0.0.2-py3-none-any.whl", hash = "sha256:7d14141c68c4704756152491946e51f45e28a98584f39ac86ff8cfb710b19671"},
-    {file = "trustpoint_devid_module-0.0.2.tar.gz", hash = "sha256:bf3a6f1c97481bd8d79f76fc679f6135798c9cab51aab312a96523253eeddf59"},
+    {file = "trustpoint_devid_module-0.0.4-py3-none-any.whl", hash = "sha256:0f86301a3aa8a69aa6136857176f337fca0514004e2a0d18c9cef402b6a24421"},
+    {file = "trustpoint_devid_module-0.0.4.tar.gz", hash = "sha256:bc3512bb57d49c932ef5f4d6860aeb433a362741ee12186f23512a8a85344af8"},
 ]
 
 [package.dependencies]
 click = ">=8.1.7,<9.0.0"
-cryptography = ">=43.0.0,<44.0.0"
+cryptography = ">=43.0.1,<44.0.0"
 prettytable = ">=3.11.0,<4.0.0"
+pyasn1 = ">=0.6.0,<0.7.0"
+pyasn1-modules = ">=0.4.0,<0.5.0"
 pydantic = ">=2.8.2,<3.0.0"
 
 [[package]]
@@ -918,4 +945,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "6d33332c0683c04e57619d057cb90c5e4525d5ca1bf3fe2cfb7cfa1db5cc7ad5"
+content-hash = "9377a243b4207ee9fe95b266ce788120a6d186742f88f7ebca3ea43b9007b2ec"
