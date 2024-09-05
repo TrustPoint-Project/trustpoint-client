@@ -18,6 +18,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.6.2"
+furo = "^2024.8.6"
 
 [tool.ruff]
 line-length = 120
