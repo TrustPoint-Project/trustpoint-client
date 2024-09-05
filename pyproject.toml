@@ -1,6 +1,28 @@
+[tool.poetry]
+name = "trustpoint-client"
+version = "0.0.3"
+description = "Trustpoint Client Software"
+authors = ["TrustPoint-Project"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+click = "^8.1.7"
+requests = "^2.32.3"
+cryptography = "^43.0.0"
+trustpoint-devid-module = "^0.0.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.2"
+
 [tool.ruff]
 line-length = 120
 indent-width = 4
+
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
@@ -10,11 +32,9 @@ multiline-quotes = "double"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "ANN101", "ANN401",
+    "ANN101", "ANN102", "ANN401",
     "D203", "D213", "D415",
-    "E701",                 # Multiple statements on one line (colon)
     "TD003",
-    # TODO(Alex): FIX should be added again, after we are departing from the PoC phase
     "FIX",
     "COM812",               # Not compatible with the formatter
     "ISC001"                # Not compatible with the formatter
@@ -27,3 +47,12 @@ docstring-code-format = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+
+# TODO(Alex): Remove this if we want to use the LED sections
+[tool.ruff.lint.per-file-ignores]
+"revpi_led.py" = ["ERA001"]
+"rpi_led.py" = ["ERA001"]
+
+[tool.poetry.scripts]
+trustpoint-client = "trustpoint_client.__main__:cli.cli"
