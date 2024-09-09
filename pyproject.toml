@@ -11,6 +11,7 @@ click = "^8.1.7"
 requests = "^2.32.3"
 cryptography = "^43.0.0"
 trustpoint-devid-module = "^0.0.4"
+pydantic = "^2.9.1"
 
 [build-system]
 requires = ["poetry-core"]
