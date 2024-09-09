@@ -20,7 +20,6 @@ class Credential(BaseModel):
     certificate_indices:  list[int] = ...
 
 
-
 class DomainInventory(BaseModel):
     model_config = ConfigDict(strict=True, extra='forbid')
 

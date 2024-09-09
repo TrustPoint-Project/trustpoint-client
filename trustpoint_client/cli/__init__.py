@@ -14,7 +14,7 @@ class TrustPointClientCli(click.MultiCommand):
     def list_commands(self, ctx: click.core.Context) -> list[str]:
         return [
             filename[:-3].replace('_', '-') for filename in os.listdir(CLI_DIRECTORY)
-            if filename.endswith('.py') and filename != '__init__.py'
+            if filename.endswith('.py') and filename not in ['__init__.py', 'decorator.py']
         ]
 
     def get_command(self, ctx: click.core.Context, name: str) -> dict:
