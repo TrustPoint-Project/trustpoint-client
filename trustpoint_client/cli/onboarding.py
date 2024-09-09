@@ -6,30 +6,7 @@ import click
 
 from trustpoint_client.api import provision as _provision
 
-version_id = '0.1.0'
-
-TRUSTPOINT_LOGO = """\b
-     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @@@@@ @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@
-    @@@@     @@ @   @@ @@@ @@@   @@@     @@@@
-    @@@@@ @@@@@  @@@@@ @@@ @@ @@@ @@@ @@@@@@@
-    @@@@@ @@@@@ @@@@@@ @@@ @@@  @@@@@ @@@@@@@
-    @@@@@ @@ @@ @@@@@@ @@  @@@@@  @@@ @@ @@@@
-    @@@@@@  @@@ @@@@@@@  @ @@    @@@@@  @@@@@
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-    \b
-                        @
-                                     @
-        @ @@    @@@   @@@    @ @@   @@@@@
-        @@  @  @   @    @    @@  @   @
-        @   @  @   @    @    @   @   @  @
-        @@@@    @@@   @@@@@  @   @    @@
-        @
-        @
-    """
+from trustpoint_client.cli import cli
 
 
 class ProvisioningCLIError(Exception):
@@ -41,32 +18,16 @@ class ProvisioningCLIError(Exception):
         super().__init__(self.message)
 
 
-def _delete_file(file: str) -> None:
+def _delete_file(file: str | Path) -> None:
     """Deletes a file if it exists."""
     # this could be a security concern (deleting arbitrary files)
     # though it can't remove dirs so _delete_file('/') won't do an rm -rf / on you
+    file_path = Path(file)
     if Path(file).exists():
         # TODO(Air): Secure deletion (overwrite with random data)
-        Path.unlink(file)
+        Path.unlink(file_path)
     else:
-        click.echo(f'No {file} file found.')
-
-
-def draw_ascii_logo() -> None:
-    """Draws the Trustpoint ASCII logo."""
-    click.echo(TRUSTPOINT_LOGO)
-
-def draw_tp_client_description() -> None:
-    """Draws the Trustpoint client description."""
-    click.echo(f'\nWelcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) - v{version_id}!')
-    # draw_ascii_logo()
-    click.echo('')
-
-
-@click.group(help=draw_tp_client_description())
-def cli() -> None:
-    pass
-
+        click.echo(f'No {file_path} file found.')
 
 @cli.command()
 @click.option('--otp', '-o', required=True, type=str, help='The OTP for provisioning.')
@@ -114,13 +75,6 @@ def auto_renew() -> None:
 
 
 @cli.command()
-def version() -> None:
-    """Displays the version of Trustpoint-Client."""
-    draw_ascii_logo()
-    click.echo(f'Welcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) v {version_id}!')
-
-
-@cli.command()
 @click.option('--trust_store', '-t', is_flag=True, help='Add this flag to delete the HTTPs trust store.')
 @click.option('--ldevid', '-l', is_flag=True, help='Add this flag to delete the LDevID certificate and chain.')
 @click.option('--sn', '-s', is_flag=True, help='Add this flag to delete the device serial number.')
@@ -139,7 +93,3 @@ def rm(*, trust_store: bool, ldevid: bool, sn: bool, all_: bool) -> None:
     if sn or all_:
         click.echo('Removing device serial number')
         _delete_file('tp-client-serial-no.txt')
-
-
-if __name__ == '__main__':
-    cli()
