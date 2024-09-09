@@ -6,8 +6,6 @@ import click
 
 from trustpoint_client.api import provision as _provision
 
-from trustpoint_client.cli import cli
-
 
 class ProvisioningCLIError(Exception):
     """Raised for all errors in the onboarding / client provisioning process."""
@@ -29,7 +27,7 @@ def _delete_file(file: str | Path) -> None:
     else:
         click.echo(f'No {file_path} file found.')
 
-@cli.command()
+@click.command()
 @click.option('--otp', '-o', required=True, type=str, help='The OTP for provisioning.')
 @click.option('--salt', '-s', required=True, type=str, help='The salt for provisioning.')
 @click.option('--url', '-u', required=True, type=str, help='The URL extension for the provisioning endpoint.')
@@ -56,40 +54,40 @@ def provision(      # noqa: PLR0913
     click.echo('Successfully provisioned the Trustpoint-Client.')
 
 
-# TODO(Air): perhaps consider ACME for renewal (is quite complex though)
-@cli.command()
-@click.option(
-    '--percentage',
-    '-p',
-    required=False,
-    type=int,
-    help='The percentage of certificate lifetime after which renewal should be attempted.',
-)
-@click.option(
-    '--interval', '-i', required=False, type=int, help='The interval in seconds how often to check for expiration'
-)
-def auto_renew() -> None:
-    """Monitors certificates for expiry and automatically requests new ones."""
-    # Prerequisites: A currently valid LDevID and  Trustpoint server truststore
-    click.echo('Auto-renewal is not yet implemented.')
+# # TODO(Air): perhaps consider ACME for renewal (is quite complex though)
+# @cli.command()
+# @click.option(
+#     '--percentage',
+#     '-p',
+#     required=False,
+#     type=int,
+#     help='The percentage of certificate lifetime after which renewal should be attempted.',
+# )
+# @click.option(
+#     '--interval', '-i', required=False, type=int, help='The interval in seconds how often to check for expiration'
+# )
+# def auto_renew() -> None:
+#     """Monitors certificates for expiry and automatically requests new ones."""
+#     # Prerequisites: A currently valid LDevID and  Trustpoint server truststore
+#     click.echo('Auto-renewal is not yet implemented.')
 
 
-@cli.command()
-@click.option('--trust_store', '-t', is_flag=True, help='Add this flag to delete the HTTPs trust store.')
-@click.option('--ldevid', '-l', is_flag=True, help='Add this flag to delete the LDevID certificate and chain.')
-@click.option('--sn', '-s', is_flag=True, help='Add this flag to delete the device serial number.')
-@click.option('--all', '-a', is_flag=True, help='Add this flag to delete all local files managed by Trustpoint-Client.')
-def rm(*, trust_store: bool, ldevid: bool, sn: bool, all_: bool) -> None:
-    """Removes local files managed by Trustpoint-Client."""
-    click.echo('Secure Removal is not yet implemented.')
-    if trust_store or all_:
-        click.echo('Removing trust store')
-        _delete_file('trust-store.pem')
-    if ldevid or all_:
-        click.echo('Removing LDevID certificate and chain')
-        _delete_file('ldevid.pem')
-        _delete_file('ldevid-private-key.pem')
-        _delete_file('ldevid-certificate-chain.pem')
-    if sn or all_:
-        click.echo('Removing device serial number')
-        _delete_file('tp-client-serial-no.txt')
+# @cli.command()
+# @click.option('--trust_store', '-t', is_flag=True, help='Add this flag to delete the HTTPs trust store.')
+# @click.option('--ldevid', '-l', is_flag=True, help='Add this flag to delete the LDevID certificate and chain.')
+# @click.option('--sn', '-s', is_flag=True, help='Add this flag to delete the device serial number.')
+# @click.option('--all', '-a', is_flag=True, help='Add this flag to delete all local files managed by Trustpoint-Client.')
+# def rm(*, trust_store: bool, ldevid: bool, sn: bool, all_: bool) -> None:
+#     """Removes local files managed by Trustpoint-Client."""
+#     click.echo('Secure Removal is not yet implemented.')
+#     if trust_store or all_:
+#         click.echo('Removing trust store')
+#         _delete_file('trust-store.pem')
+#     if ldevid or all_:
+#         click.echo('Removing LDevID certificate and chain')
+#         _delete_file('ldevid.pem')
+#         _delete_file('ldevid-private-key.pem')
+#         _delete_file('ldevid-certificate-chain.pem')
+#     if sn or all_:
+#         click.echo('Removing device serial number')
+#         _delete_file('tp-client-serial-no.txt')
