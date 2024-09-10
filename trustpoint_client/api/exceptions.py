@@ -50,6 +50,14 @@ class InventoryDataWriteError(TrustpointClientError):
         super().__init__('Writing new data to the inventory failed.')
 
 
+class ConfigDataWriteError(TrustpointClientError):
+    """Raised if writing to the config data failed."""
+
+    def __init__(self) -> None:
+        """Initializes the ConfigDataWriteError."""
+        super().__init__('Writing new settings to the config file failed.')
+
+
 class PurgeError(TrustpointClientError):
     """Raised if purging the working directory failed."""
 

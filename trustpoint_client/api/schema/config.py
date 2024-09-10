@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import enum
 from pydantic import BaseModel, ConfigDict
+import ipaddress
 
 
 class PkiProtocol(enum.Enum):
@@ -13,17 +14,14 @@ class PkiProtocol(enum.Enum):
     REST = 'REST'
 
 
-class DomainConfig(BaseModel):
-
-    model_config = ConfigDict(strict=True, extra='allow')
-    # TODO(Alex8472): Validate str (name of domain)
-    default_pki_protocol: str = ...
-
-
-class TrustPointConfig(BaseModel):
+class TrustpointConfigModel(BaseModel):
     """The Trustpoint Client Configuration Schema."""
 
     model_config = ConfigDict(strict=True, extra='allow')
 
     default_domain: str = ...
-    domain_config: dict[str, DomainConfig] = ...
+    trustpoint_ipv4: None | ipaddress.IPv4Address = ...
+    trustpoint_ipv6: None | ipaddress.IPv6Address = ...
+    trustpoint_domain: None | str = ...
+    trustpoint_port: None | int = ...
+    pki_protocol: PkiProtocol = ...

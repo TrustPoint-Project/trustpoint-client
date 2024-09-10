@@ -1,8 +1,9 @@
-from trustpoint_client.api.schema.config import TrustPointConfig
+from trustpoint_client.api.schema.config import TrustpointConfigModel, PkiProtocol
 from trustpoint_client.api.schema.inventory import Inventory
 
 
 __all__ = [
-    'TrustPointConfig',
+    'TrustpointConfigModel',
+    'PkiProtocol',
     'Inventory'
 ]

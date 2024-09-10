@@ -23,8 +23,8 @@ from trustpoint_client.api.purge import TrustpointClientPurge
 import pydantic
 
 
-WORKING_DIR = Path().home() / '.local' / 'trustpoint' / 'client'
-CONFIG_FILE_PATH = WORKING_DIR / 'config.json'
+WORKING_DIR = Path().home() / Path('.local') / Path('trustpoint') / Path('client')
+CONFIG_FILE_PATH = WORKING_DIR / Path('config.json')
 
 
 class TrustpointClient(
@@ -51,7 +51,6 @@ class TrustpointClient(
             TrustpointClientCorruptedError: If the Trustpoint Client failed to load and verify the data from storage.
         """
         self._working_dir: Path = Path(working_dir)
-        self._config_file_path: Path = CONFIG_FILE_PATH
         self._inventory_path: Path = self.working_dir / 'inventory.json'
 
         try:
