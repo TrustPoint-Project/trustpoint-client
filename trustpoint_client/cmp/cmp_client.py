@@ -2,8 +2,8 @@ import os
 from pathlib import Path
 import subprocess
 from datetime import datetime
-from src.openssl_assembler import OpenSSLCommandBuilder
-from src.crypto_utils import CryptoUtils
+from trustpoint_client.cmp.openssl_assembler import OpenSSLCommandBuilder
+from trustpoint_client.cmp.crypto_utils import CryptoUtils
 import logging
 import traceback
 
