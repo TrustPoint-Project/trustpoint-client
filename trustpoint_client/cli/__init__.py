@@ -2,9 +2,11 @@ import os
 
 import click
 
-from trustpoint_client.api import TrustpointClient, WORKING_DIR
+from trustpoint_client.api import TrustpointClient, WORKING_DIR, CONFIG_FILE_PATH
+from trustpoint_client.api.config import TrustpointClientConfig
 from trustpoint_client.cli.version import version_id
 from pathlib import Path
+
 from trustpoint_client.cli.decorator import handle_cli_error
 
 CLI_DIRECTORY = str(Path(__file__).resolve().parent)
@@ -17,8 +19,12 @@ class TrustPointClientCli(click.MultiCommand):
             if filename.endswith('.py') and filename not in ['__init__.py', 'decorator.py']
         ]
 
+    @handle_cli_error
     def get_command(self, ctx: click.core.Context, name: str) -> dict:
         ns = {}
+        if name not in self.list_commands(ctx):
+            # TODO(AlexHx8472)
+            raise ValueError(f'\n\tCommand \'{name}\' does not exist.\n')
         name = name.replace('-', '_')
         fn = Path(CLI_DIRECTORY + '/' + name + '.py')
         with fn.open() as f:
@@ -79,7 +85,7 @@ def get_trustpoint_client(working_dir: Path = WORKING_DIR) -> TrustpointClient:
     Returns:
         TrustpointClient: An instance of the TrustpointClient class.
     """
-    return TrustpointClient(working_dir=working_dir, purge=False)
+    return TrustpointClient(working_dir=working_dir, purge_init=False)
 
 
 def get_trustpoint_client_for_purge(working_dir: Path = WORKING_DIR) -> TrustpointClient:
@@ -91,7 +97,7 @@ def get_trustpoint_client_for_purge(working_dir: Path = WORKING_DIR) -> Trustpoi
     Returns:
         TrustpointClient: An instance of the TrustpointClient class.
     """
-    return TrustpointClient(working_dir=working_dir, purge=True)
+    return TrustpointClient(working_dir=working_dir, purge_init=True)
 
 
 def get_initialized_trustpoint_client(working_dir: Path = WORKING_DIR) -> None | TrustpointClient:
@@ -110,3 +116,13 @@ def get_initialized_trustpoint_client(working_dir: Path = WORKING_DIR) -> None |
         click.echo('Trustpoint Client is not yet initialized.')
         return None
     return trustpoint_client
+
+
+def get_client_config(config_file_path: Path = CONFIG_FILE_PATH) -> TrustpointClientConfig:
+    """Gets the initialized Trustpoint Client Config object.
+
+    Args:
+        config_file_path: Path to the configuration file.
+
+    """
+    return TrustpointClientConfig(config_file_path)

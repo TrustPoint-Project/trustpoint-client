@@ -7,14 +7,9 @@ def list_():
     """Lists keys, certificates and/or trust-stores."""
 
 
-@list_.command(name='keys')
-def list_keys():
+@list_.command(name='credential')
+def list_credentials():
     """Lists all available keys."""
-
-
-@list_.command(name='certs')
-def list_certificates():
-    """Lists all available certificates."""
 
 
 @list_.command(name='trust-stores')

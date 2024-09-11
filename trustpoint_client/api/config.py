@@ -12,9 +12,20 @@ class TrustpointClientConfig:
 
     def __init__(self, config_path: Path = CONFIG_FILE_PATH) -> None:
         self._config_path = config_path
-        self._config = TrustpointConfigModel()
-        with CONFIG_FILE_PATH.open('r') as f:
-            self._config = TrustpointConfigModel.model_validate_json(f.read())
+        if CONFIG_FILE_PATH.exists() and CONFIG_FILE_PATH.is_file():
+            with CONFIG_FILE_PATH.open('r') as f:
+                self._config = TrustpointConfigModel.model_validate_json(f.read())
+        else:
+            empty_trustpoint_model = TrustpointConfigModel(
+                device_id=None,
+                trustpoint_ipv4=None,
+                trustpoint_ipv6=None,
+                trustpoint_domain=None,
+                trustpoint_port=None,
+                default_domain=None,
+                pki_protocol=None
+            )
+            self._store_config(empty_trustpoint_model)
 
     @property
     def config_path(self) -> Path:
@@ -31,11 +42,31 @@ class TrustpointClientConfig:
         except Exception as exception:
             raise ConfigDataWriteError from exception
 
-    def list_config(self) -> None:
-        pass
+    def list_config(self) -> dict[str, str]:
+        """Returns a dictionary with all key, value pairs."""
+        return {
+            key: value for key, value in self._config.model_dump().items()
+        }
 
     def sync_config(self) -> None:
+        """Gets the current configuration from the trustpoint."""
         pass
+
+    @property
+    def device_id(self) -> int:
+        """Returns the configured device_id."""
+        return self._config.device_id
+
+    @device_id.setter
+    def device_id(self, device_id: int) -> None:
+        """Sets the configured device_id."""
+        new_config = self.config
+        new_config.device_id = device_id
+        self._store_config(new_config)
+
+    @device_id.deleter
+    def device_id(self) -> None:
+        """Sets the device_id to None."""
 
     @property
     def trustpoint_ipv4(self) -> ipaddress.IPv4Address:
@@ -51,7 +82,7 @@ class TrustpointClientConfig:
 
     @trustpoint_ipv4.deleter
     def trustpoint_ipv4(self) -> None:
-        """Deletes the configured Trustpoint IPv4 Address."""
+        """Sets the configured Trustpoint IPv4 Address to None."""
         new_config = self.config
         new_config.trustpoint_ipv4 = None
         self._store_config(new_config)
@@ -142,6 +173,11 @@ class TrustpointClientConfig:
         """Sets the default domain to use."""
         new_config = self.config
         new_config.default_domain = default_domain
-        if default_domain not in new_config.available_domains:
-            new_config.available_domains.append(default_domain)
+        self._store_config(new_config)
+
+    @default_domain.deleter
+    def default_domain(self) -> None:
+        """Sets the configured default domain to None."""
+        new_config = self.config
+        new_config.default_domain = None
         self._store_config(new_config)
