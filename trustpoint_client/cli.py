@@ -6,6 +6,7 @@ import click
 
 from trustpoint_client.mdns import find as mdns_find
 from trustpoint_client.api import provision as _provision
+from trustpoint_client.aoki import aoki_onboarding
 
 version_id = '0.1.0'
 
@@ -94,6 +95,13 @@ def provision(      # noqa: PLR0913
         raise ProvisioningCLIError(exc_msg) from e
 
     click.echo('Successfully provisioned the Trustpoint-Client.')
+
+
+@cli.command()
+@click.option('--host', '-h', required=False, type=str, help='The IP or domain address of the Trustpoint.')
+def zero_touch_test(host: str) -> None:
+    """Tests the AOKI zero-touch provisioning of the Trustpoint-Client (excl. mDNS discovery)."""
+    aoki_onboarding(host)
 
 
 # TODO(Air): perhaps consider ACME for renewal (is quite complex though)
