@@ -139,7 +139,7 @@ def rm(*, trust_store: bool, ldevid: bool, sn: bool, rmall: bool) -> None:
     click.echo('Secure Removal is not yet implemented.')
     if trust_store or rmall:
         click.echo('Removing trust store')
-        _delete_file('trust-store.pem')
+        _delete_file('tls_trust_store.pem')
     if ldevid or rmall:
         click.echo('Removing LDevID certificate and chain')
         _delete_file('ldevid.pem')

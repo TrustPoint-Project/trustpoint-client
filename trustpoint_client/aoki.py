@@ -55,6 +55,7 @@ import base64
 import click
 import json
 import logging
+import os
 import requests
 import secrets
 import threading
@@ -67,7 +68,8 @@ from cryptography.hazmat.primitives.asymmetric import ec
 
 from trustpoint_client.api import ProvisioningError, request_ldevid
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('tpclient.aoki')
 
 onboarding_lock = threading.Lock()
@@ -108,11 +110,12 @@ def verify_server_signature(message: bytes, ownership_cert: bytes, server_signat
         raise ProvisioningError(exc_msg) from e
 
 
-def aoki_onboarding(host: str):
+def _aoki_onboarding(host: str):
     """Called for each discovered Trustpoint server to attempt onboarding."""
     # Use threading to handle multiple servers (but only run one onboarding process at a time)
-    log.info(f'Pending zero-touch onboarding attempt with Trustpoint server at {host}')
-    onboarding_lock.acquire()
+    if os.path.exists('ldevid.pem'):
+        log.info('LDevID already exists, aborting onboarding.')
+        return
     log.info(f'AOKI onboarding with Trustpoint server at {host} started')
 
     # Step 2: Establish provisionally trusted TLS connection
@@ -220,3 +223,10 @@ def aoki_onboarding(host: str):
             serial_number = 'tpcl_' + secrets.token_urlsafe(12)
     
     request_ldevid(host, url_ext, otp, salt, serial_number)
+
+def aoki_onboarding(host: str):
+    """Called for each discovered Trustpoint server to attempt onboarding."""
+
+    log.info(f'Pending zero-touch onboarding attempt with Trustpoint server at {host}')
+    with onboarding_lock:
+        _aoki_onboarding(host)

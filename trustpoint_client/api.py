@@ -71,16 +71,16 @@ def get_trust_store(host: str = '127.0.0.1:5000', uriext: str = '', hexpass: str
     """Retrieves the TLS trust store from the Trustpoint."""
     click.echo('Retrieving Trustpoint Trust Store')
 
-    if Path('trust-store.pem').exists():
+    if Path('tls_trust_store.pem').exists():
         # TODO(Air): it might be a security risk to have this (write) accessible on the filesystem
-        click.echo('trust-store.pem file present locally')
-        with Path('trust-store.pem').open('rb') as certfile:
+        click.echo('tls_trust_store.pem file present locally')
+        with Path('tls_trust_store.pem').open('rb') as certfile:
             cert_unexpired = key.check_certificate_unexpired(certfile.read())
             if cert_unexpired:
                 return
 
     # Truststore file not present, obtain it (this request is intentionally not verified)
-    click.echo('trust-store.pem missing, downloading from Trustpoint...')
+    click.echo('tls_trust_store.pem missing, downloading from Trustpoint...')
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     response = requests.get('https://' + host + '/api/onboarding/trust-store/' + uriext, verify=False, timeout=6)  # noqa: S501
     if response.status_code != HTTP_STATUS_OK:
@@ -118,7 +118,7 @@ def get_trust_store(host: str = '127.0.0.1:5000', uriext: str = '', hexpass: str
         exc_msg = 'Invalid verification level.'
         raise ProvisioningError(exc_msg)
 
-    with Path('trust-store.pem').open('wb') as f:  # write downloaded truststore to FS
+    with Path('tls_trust_store.pem').open('wb') as f:  # write downloaded truststore to FS
         f.write(response.content)
 
     click.echo('Thank you, the trust store was downloaded successfully.')
@@ -135,11 +135,12 @@ def request_ldevid(host: str, url: str, otp: str, salt: str, sn: str) -> None:
         'https://' + host + '/api/onboarding/ldevid/' + url,
         auth=(salt, otp),
         files=files,
-        verify='trust-store.pem',
+        verify='tls_trust_store.pem',
         timeout=6,
     )
     if crt.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(crt.status_code)
+        click.echo(crt.text)
         raise ProvisioningError(exc_msg)
 
     with Path('ldevid.pem').open('wb') as f:  # write downloaded certificate to FS
@@ -158,7 +159,7 @@ def request_cert_chain(host: str, url: str) -> None:
     click.echo('Downloading LDevID certificate chain')
     chain = requests.get(
         'https://' + host + '/api/onboarding/ldevid/cert-chain/' + url,
-        verify='trust-store.pem',
+        verify='tls_trust_store.pem',
         cert=('ldevid.pem', 'ldevid-private-key.pem'),
         timeout=6,
     )
