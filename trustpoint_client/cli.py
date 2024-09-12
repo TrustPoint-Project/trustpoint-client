@@ -133,19 +133,19 @@ def version() -> None:
 @click.option('--trust_store', '-t', is_flag=True, help='Add this flag to delete the HTTPs trust store.')
 @click.option('--ldevid', '-l', is_flag=True, help='Add this flag to delete the LDevID certificate and chain.')
 @click.option('--sn', '-s', is_flag=True, help='Add this flag to delete the device serial number.')
-@click.option('--all', '-a', is_flag=True, help='Add this flag to delete all local files managed by Trustpoint-Client.')
-def rm(*, trust_store: bool, ldevid: bool, sn: bool, all_: bool) -> None:
+@click.option('--rmall', '-a', is_flag=True, help='Add this flag to delete all local files managed by Trustpoint-Client.')
+def rm(*, trust_store: bool, ldevid: bool, sn: bool, rmall: bool) -> None:
     """Removes local files managed by Trustpoint-Client."""
     click.echo('Secure Removal is not yet implemented.')
-    if trust_store or all_:
+    if trust_store or rmall:
         click.echo('Removing trust store')
         _delete_file('trust-store.pem')
-    if ldevid or all_:
+    if ldevid or rmall:
         click.echo('Removing LDevID certificate and chain')
         _delete_file('ldevid.pem')
         _delete_file('ldevid-private-key.pem')
         _delete_file('ldevid-certificate-chain.pem')
-    if sn or all_:
+    if sn or rmall:
         click.echo('Removing device serial number')
         _delete_file('tp-client-serial-no.txt')
 

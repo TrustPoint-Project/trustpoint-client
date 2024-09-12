@@ -53,6 +53,7 @@
 
 import base64
 import click
+import json
 import logging
 import requests
 import secrets
@@ -171,18 +172,34 @@ def aoki_onboarding(host: str):
     # TODO: Integrate with DevID module
     with open('tls_trust_store.pem', 'w') as tls_truststore:
         tls_truststore.write(server_tls_cert)
-    
-    with open('idevid_private.key', 'rb') as keyfile:
-        idevid_private_key = serialization.load_pem_private_key(keyfile.read(), password=None)
-    signature = idevid_private_key.sign(server_nonce, ec.ECDSA(hashes.SHA256()))
-    headers = {'aoki-client-signature': base64.b64encode(signature)}
 
     click.echo('Sending finalization request...')
+    print('Nonce to sign:', server_nonce)
+    fin_data = {'server_nonce': server_nonce.decode('utf-8')}
+    fin_str = json.dumps(fin_data,separators=(',', ':'))
+    print(fin_str)
+    fin_bytes = fin_str.encode()
 
+    hash = hashes.Hash(hashes.SHA256())
+    hash.update(fin_bytes)
+    log.debug(f'SHA-256 hash of message: {hash.finalize().hex()}')
+
+    with open('idevid_private.key', 'rb') as keyfile:
+        idevid_private_key = serialization.load_pem_private_key(keyfile.read(), password=None)
+        signature = idevid_private_key.sign(fin_bytes, ec.ECDSA(hashes.SHA256()))
+        headers = {'aoki-client-signature': base64.b64encode(signature)}
+        
+    print('Client Signature:', signature)
     response = requests.post('https://' + host + '/api/onboarding/aoki/finalize',
-                             verify='tls_trust_store.pem', timeout=6, headers=headers)  # noqa: S501
+                             json=fin_data, verify='tls_trust_store.pem', timeout=6, headers=headers)  # noqa: S501
     if response.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(response.status_code)
+        raise ProvisioningError(exc_msg)
+
+    try:
+        response_json = response.json()
+    except Exception as e:
+        exc_msg = 'Server response is not a valid JSON object.'
         raise ProvisioningError(exc_msg)
     
     try:
