@@ -16,9 +16,10 @@ from trustpoint_client.api.exceptions import (
 )
 
 from trustpoint_client.api.decorator import handle_unexpected_errors
-from trustpoint_client.api.schema import Inventory
+from trustpoint_client.api.schema import Inventory, TrustpointConfigModel
 from trustpoint_client.api.init import TrustpointClientInit
 from trustpoint_client.api.purge import TrustpointClientPurge
+from trustpoint_client.api.provision import TrustpointClientProvision
 
 import pydantic
 
@@ -29,13 +30,17 @@ CONFIG_FILE_PATH = WORKING_DIR / Path('config.json')
 
 class TrustpointClient(
         TrustpointClientInit,
-        TrustpointClientPurge):
+        TrustpointClientPurge,
+        TrustpointClientProvision):
     """The Trustpoint Client class."""
     _working_dir: Path
     _devid_module: DevIdModule
 
     _inventory_path: Path
     _inventory = None
+
+    _config_path: Path
+    _config = None
 
     def __init__(self, working_dir: Path, purge_init: bool = False) -> None: # noqa: FBT001, FBT002
         """Instantiates a TrustpointClient object with the desired working directory.
@@ -52,6 +57,7 @@ class TrustpointClient(
         """
         self._working_dir: Path = Path(working_dir)
         self._inventory_path: Path = self.working_dir / 'inventory.json'
+        self._config_path: Path = self.working_dir / 'config.json'
 
         try:
             self._devid_module = get_devid_module()
@@ -66,9 +72,17 @@ class TrustpointClient(
             try:
                 with self.inventory_path.open('r') as f:
                     self._inventory = Inventory.model_validate_json(f.read())
+            except pydantic.ValidationError as exception:
+                raise TrustpointClientCorruptedError from exception
+
+        if self.config_path.exists() and self.config_path.is_file():
+            try:
+                with self.config_path.open('r') as f:
+                    self._config = TrustpointConfigModel.model_validate_json(f.read())
                 self._is_initialized = True
             except pydantic.ValidationError as exception:
                 raise TrustpointClientCorruptedError from exception
+
 
 
     # ------------------------------------------ Trustpoint Client Properties ------------------------------------------
@@ -98,6 +112,16 @@ class TrustpointClient(
         return self._inventory_path
 
     @property
+    @handle_unexpected_errors(message='Failed to get the config path.')
+    def config_path(self) -> Path:
+        """Returns the Path instance containing the config file path.
+
+        Returns:
+            Path: The Path instance containing the config file path.
+        """
+        return self._config_path
+
+    @property
     @handle_unexpected_errors(message='Failed to get the inventory as a model copy.')
     def inventory(self) -> Inventory:
         """Returns the current inventory as a model copy.
@@ -113,6 +137,22 @@ class TrustpointClient(
         return self._inventory.model_copy()
 
 
+    @property
+    @handle_unexpected_errors(message='Failed to get the config as a model copy.')
+    def config(self) -> TrustpointConfigModel:
+        """Returns the current inventory as a model copy.
+
+        Returns:
+            Inventory: A model copy of the current inventory.
+
+        Raises:
+            NotInitializedError: If the Trustpoint Client is not yet initialized.
+        """
+        if self._config is None:
+            raise NotInitializedError
+        return self._config.model_copy()
+
+
     # -------------------------------------- Initialization, Purging and Storing ---------------------------------------
 
 
@@ -121,5 +161,13 @@ class TrustpointClient(
         try:
             self.inventory_path.write_text(inventory.model_dump_json())
             self._inventory = inventory
+        except Exception as exception:
+            raise InventoryDataWriteError from exception
+
+    @handle_unexpected_errors(message='Failed to store the config.')
+    def _store_config(self, config: TrustpointConfigModel) -> None:
+        try:
+            self.config_path.write_text(config.model_dump_json())
+            self._config = config
         except Exception as exception:
             raise InventoryDataWriteError from exception

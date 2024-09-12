@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from trustpoint_client.api import Inventory
+from trustpoint_client.api import Inventory, TrustpointConfigModel
 from trustpoint_client.api import handle_unexpected_errors
 from trustpoint_client.api import (
     AlreadyInitializedError,
@@ -14,6 +14,7 @@ from trustpoint_client.api import exceptions as devid_exceptions
 class TrustpointClientInit(TrustpointClientBaseClass):
 
     _inventory: None | Inventory
+    _config: None | TrustpointConfigModel
 
     @handle_unexpected_errors(message='Failed to initialize the Trustpoint Client.')
     def init(self) -> None:
@@ -28,6 +29,9 @@ class TrustpointClientInit(TrustpointClientBaseClass):
         """
 
         if self._inventory is not None:
+            raise AlreadyInitializedError
+
+        if self._config is not None:
             raise AlreadyInitializedError
 
         try:
@@ -55,3 +59,17 @@ class TrustpointClientInit(TrustpointClientBaseClass):
         except Exception as exception:
             raise InventoryDataWriteError from exception
         self._inventory = inventory
+
+        config = TrustpointConfigModel(
+            device_id=None,
+            trustpoint_ipv4=None,
+            trustpoint_port=None,
+            default_domain=None,
+            pki_protocol=None
+        )
+
+        try:
+            self.config_path.write_text(config.model_dump_json())
+        except Exception as exception:
+            raise InventoryDataWriteError from exception
+        self._config = config
