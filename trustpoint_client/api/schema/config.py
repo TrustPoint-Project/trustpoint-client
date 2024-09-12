@@ -14,6 +14,15 @@ class PkiProtocol(enum.Enum):
     REST = 'REST'
 
 
+class SignatureSuite(enum.Enum):
+
+    RSA2048 = 'RSA2048'
+    RSA3072 = 'RSA3072'
+    RSA4096 = 'RSA4096'
+    SECP256R1 = 'SECP256R1'
+    SECP384R1 = 'SECP384R1'
+
+
 class TrustpointConfigModel(BaseModel):
     """The Trustpoint Client Configuration Schema."""
 
