@@ -10,27 +10,22 @@ from trustpoint_client.aoki import aoki_onboarding
 
 version_id = '0.1.0'
 
-TRUSTPOINT_LOGO = """\b
-     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @@@@@ @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@
-    @@@@     @@ @   @@ @@@ @@@   @@@     @@@@
-    @@@@@ @@@@@  @@@@@ @@@ @@ @@@ @@@ @@@@@@@
-    @@@@@ @@@@@ @@@@@@ @@@ @@@  @@@@@ @@@@@@@
-    @@@@@ @@ @@ @@@@@@ @@  @@@@@  @@@ @@ @@@@
-    @@@@@@  @@@ @@@@@@@  @ @@    @@@@@  @@@@@
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+TRUSTPOINT_LOGO = r"""
+      ________________________________  
+     /    _                      _    \ 
+    |   _| |_  ____ _   _  ___ _| |_   |
+    |  (_   _)/ ___) | | |/___|_   _)  |
+    |    | |_| |   | |_| |___ | | |_   |
+    |     \__)_|   |____/(___/   \__)  |  
+     \________________________________/   
+                      _            
+                     (_)         _   
+        ____   ___   __    ___ _| |_ 
+       |  _ \ / _ \ (  |  / _ (_   _)
+       | |_| | |_| | | | | | | || |_ 
+       |  __/ \___/ (___)|_| |_| \__)
+       |_|
 
-    \b
-                        @
-                                     @
-        @ @@    @@@   @@@    @ @@   @@@@@
-        @@  @  @   @    @    @@  @   @
-        @   @  @   @    @    @   @   @  @
-        @@@@    @@@   @@@@@  @   @    @@
-        @
-        @
     """
 
 
@@ -61,7 +56,7 @@ def draw_ascii_logo() -> None:
 def draw_tp_client_description() -> None:
     """Draws the Trustpoint client description."""
     click.echo(f'\nWelcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) - v{version_id}!')
-    # draw_ascii_logo()
+    #draw_ascii_logo()
     click.echo('')
 
 
@@ -154,7 +149,12 @@ def rm(*, trust_store: bool, ldevid: bool, sn: bool, rmall: bool) -> None:
 @cli.command()
 def find() -> None:
     """Finds Trustpoint servers on the local network."""
-    mdns_find()
+    mdns_find(zero_touch=False)
+
+@cli.command()
+def start_zero_touch() -> None:
+    """Starts the zero-touch onboarding process."""
+    mdns_find(zero_touch=True)
 
 
 if __name__ == '__main__':

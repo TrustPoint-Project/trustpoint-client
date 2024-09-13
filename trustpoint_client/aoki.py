@@ -68,8 +68,8 @@ from cryptography.hazmat.primitives.asymmetric import ec
 
 from trustpoint_client.api import ProvisioningError, request_ldevid
 
-#logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('tpclient.aoki')
 
 onboarding_lock = threading.Lock()
@@ -194,7 +194,7 @@ def _aoki_onboarding(host: str):
         
     print('Client Signature:', signature)
     response = requests.post('https://' + host + '/api/onboarding/aoki/finalize',
-                             json=fin_data, verify='tls_trust_store.pem', timeout=6, headers=headers)  # noqa: S501
+                             json=fin_data, verify='tls_trust_store.pem', timeout=6, headers=headers)
     if response.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(response.status_code)
         raise ProvisioningError(exc_msg)
@@ -229,4 +229,9 @@ def aoki_onboarding(host: str):
 
     log.info(f'Pending zero-touch onboarding attempt with Trustpoint server at {host}')
     with onboarding_lock:
-        _aoki_onboarding(host)
+        try:
+            _aoki_onboarding(host)
+        except Exception as e:
+            log.exception(f'Zero-touch onboarding attempt with Trustpoint server at {host} failed: {e}', exc_info=True)
+            return False
+    return True
