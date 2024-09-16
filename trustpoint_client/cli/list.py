@@ -4,7 +4,6 @@ from trustpoint_devid_module.serializer import CertificateCollectionSerializer
 from trustpoint_client.cli import get_trustpoint_client, handle_cli_error
 
 
-# noinspection PyShadowingBuiltins
 @click.group()
 def list_():
     """Lists keys, certificates and/or trust-stores."""
