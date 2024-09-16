@@ -66,7 +66,9 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
-from trustpoint_client.api import ProvisioningError, request_ldevid
+from trustpoint_client.api.exceptions import ProvisioningError
+from trustpoint_client.api.provision import TrustpointClientProvision
+from trustpoint_client.cli import get_trustpoint_client
 
 logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
@@ -82,6 +84,9 @@ def verify_ownership_cert(ownership_cert: bytes) -> bool:
     # For now, just do a file-level check against 'trust_store.pem'
     with open('owner_cert_chain.pem', 'rb') as truststore:
         truststore_data = truststore.read()
+        print(ownership_cert)
+        print('/////')
+        print(truststore_data)
         if ownership_cert not in truststore_data:
             exc_msg = 'Server ownership certificate is not part of the client trust store.'
             raise ProvisioningError(exc_msg)
@@ -110,13 +115,15 @@ def verify_server_signature(message: bytes, ownership_cert: bytes, server_signat
         raise ProvisioningError(exc_msg) from e
 
 
-def _aoki_onboarding(host: str):
+def _aoki_onboarding(host: str, port: int = 443):
     """Called for each discovered Trustpoint server to attempt onboarding."""
     # Use threading to handle multiple servers (but only run one onboarding process at a time)
     if os.path.exists('ldevid.pem'):
         log.info('LDevID already exists, aborting onboarding.')
         return
     log.info(f'AOKI onboarding with Trustpoint server at {host} started')
+
+    log.info(os.getcwd())
 
     # Step 2: Establish provisionally trusted TLS connection
     # Send onboarding request, including IDevID cert and a nonce for the server to sign to prove possession of the ownership key
@@ -127,7 +134,7 @@ def _aoki_onboarding(host: str):
     client_nonce = secrets.token_hex(16)
     init_data = {'idevid': idevid.read().decode('utf-8'),
                  'client_nonce': client_nonce}
-    response = requests.post('https://' + host + '/api/onboarding/aoki/init',
+    response = requests.post('https://' + host + ':' + str(port) + '/api/onboarding/aoki/init',
                              json=init_data, verify=False, timeout=6)  # noqa: S501
     log.debug(response.text) 
     log.debug(response.headers)
@@ -193,10 +200,11 @@ def _aoki_onboarding(host: str):
         headers = {'aoki-client-signature': base64.b64encode(signature)}
         
     print('Client Signature:', signature)
-    response = requests.post('https://' + host + '/api/onboarding/aoki/finalize',
+    response = requests.post('https://' + host + ':' + str(port) + '/api/onboarding/aoki/finalize',
                              json=fin_data, verify='tls_trust_store.pem', timeout=6, headers=headers)
     if response.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(response.status_code)
+        log.debug(response.text)
         raise ProvisioningError(exc_msg)
 
     try:
@@ -207,8 +215,7 @@ def _aoki_onboarding(host: str):
     
     try:
         otp = response_json['otp']
-        salt = response_json['salt']
-        url_ext = response_json['url_ext']  # Temporary URL extension for LDevID enrollment, use a single endpoint long-term
+        device_name = response_json['device']
     except KeyError as e:
         exc_msg = 'Server finalize response JSON is missing required fields.'
         raise ProvisioningError(exc_msg) from e
@@ -222,15 +229,21 @@ def _aoki_onboarding(host: str):
         except (x509.ExtensionNotFound, IndexError):
             serial_number = 'tpcl_' + secrets.token_urlsafe(12)
     
-    request_ldevid(host, url_ext, otp, salt, serial_number)
+    trustpoint_client = get_trustpoint_client()
+    provision_data = trustpoint_client.provision_zero_touch(
+        otp=otp, device=device_name, host=host, port=port, trust_store=server_tls_cert
+    )
+    
+    if provision_data['ldevid']:
+        log.info('Zero-Touch LDevID successfully obtained!')
 
-def aoki_onboarding(host: str):
+def aoki_onboarding(host: str, port: int = 443):
     """Called for each discovered Trustpoint server to attempt onboarding."""
 
     log.info(f'Pending zero-touch onboarding attempt with Trustpoint server at {host}')
     with onboarding_lock:
         try:
-            _aoki_onboarding(host)
+            _aoki_onboarding(host, port)
         except Exception as e:
             log.exception(f'Zero-touch onboarding attempt with Trustpoint server at {host} failed: {e}', exc_info=True)
             return False

@@ -3,7 +3,7 @@
 import socket
 import sys
 import threading
-from trustpoint_client.aoki import aoki_onboarding
+from trustpoint_client.api.zero_touch_aoki import aoki_onboarding
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
 exit_event = threading.Event()
@@ -25,15 +25,17 @@ class TpServiceListener(ServiceListener):
         if (name.startswith('trustpoint')):
             print(f'Trustpoint detected at {socket.inet_ntoa(info.addresses[0])}:{info.port}')
             if (self.do_aoki_onboarding):
-                if aoki_onboarding(f'{socket.inet_ntoa(info.addresses[0])}:{info.port}'):
-                    print('Aoki onboarding successful!')
+                if aoki_onboarding(socket.inet_ntoa(info.addresses[0]), info.port):
+                    print('AOKI onboarding successful!')
                     exit_event.set()
 
 def wait_for_user_input():
-    input("Press enter to exit...\n\n")
-    exit_event.set()
+    try:
+        input("Press enter to exit...\n\n")
+    finally:
+        exit_event.set()
 
-def find(zero_touch: bool = False):
+def find_services(zero_touch: bool = False):
     """CLI command for an mDNS service discovery and zero-touch onboarding."""
     print('mDNS is not secure! Anyone on the network may pretend to be a Trustpoint server.')
     zeroconf = Zeroconf()
