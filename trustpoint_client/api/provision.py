@@ -60,9 +60,9 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
         # TODO: check http status code
         if not HMAC_SIGNATURE_HTTP_HEADER in response.headers:
             # TODO: ExceptionHandling
-            raise ValueError
+            raise ValueError('HMAC missing in HTTP header.')
         if not DOMAIN in response.headers:
-            raise ValueError
+            raise ValueError('Domain missing in HTTP header.')
         domain = response.headers[DOMAIN]
         self._provision_data['domain'] = domain
         self._provision_data['algorithm'] = response.headers['algorithm']
@@ -78,7 +78,7 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
         derived_key = hashlib.pbkdf2_hmac('sha256', otp, salt, pbkdf2_iter, dklen=32)
         calculated_hmac = hmac.new(derived_key, response.content, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(calculated_hmac, response.headers[HMAC_SIGNATURE_HTTP_HEADER]):
-            raise RuntimeError
+            raise RuntimeError('HMACs do not match.')
 
         self._provision_data['trust_store'] = response.content.decode()
 
@@ -92,7 +92,7 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
             elif key_size == '4096':
                 key_size = 4096
             else:
-                raise ValueError
+                raise ValueError('Key size not supported.')
             return rsa.generate_private_key(public_exponent=65537, key_size=key_size)
 
         if algorithm.upper() == 'ECC':
@@ -101,9 +101,9 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
             elif curve.upper() == 'SECP384R1':
                 return ec.generate_private_key(curve=ec.SECP384R1())
             else:
-                raise ValueError
+                raise ValueError('Curve not supported.')
 
-        raise ValueError
+        raise ValueError('Algorithm not supported.')
 
     def _provision_get_ldevid(self) -> None:
         host = self._provision_data['host']

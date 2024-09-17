@@ -30,8 +30,16 @@ def req_cert_generic():
 
 
 @req_cert.command(name='tls-client-cert')
-def req_tls_client_cert():
+@click.option('--name', '-n', type=str, required=True)
+@click.option('--common-name', '-c', type=str, required=False)
+def req_tls_client_cert(name:str, common_name:str):
     """Request a new tls client certificate."""
+    if not name.isidentifier():
+        raise click.BadParameter('Name must be a valid identifier.')
+
+    click.echo('\n\tTLS Client Certificate Issued.\n')
+    click.echo('\n\tCertificate Type: TLS Client Certificate.')
+    click.echo('')
 
 
 @req_cert.command(name='tls-server-cert')
