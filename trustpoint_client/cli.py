@@ -6,30 +6,26 @@ import click
 
 from trustpoint_client.mdns import find as mdns_find
 from trustpoint_client.api import provision as _provision
+from trustpoint_client.aoki import aoki_onboarding
 
 version_id = '0.1.0'
 
-TRUSTPOINT_LOGO = """\b
-     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @@@@@ @@@@@@@@@@@@@@@@@@@@@@@@@@@ @@@@@@@
-    @@@@     @@ @   @@ @@@ @@@   @@@     @@@@
-    @@@@@ @@@@@  @@@@@ @@@ @@ @@@ @@@ @@@@@@@
-    @@@@@ @@@@@ @@@@@@ @@@ @@@  @@@@@ @@@@@@@
-    @@@@@ @@ @@ @@@@@@ @@  @@@@@  @@@ @@ @@@@
-    @@@@@@  @@@ @@@@@@@  @ @@    @@@@@  @@@@@
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+TRUSTPOINT_LOGO = r"""
+      ________________________________  
+     /    _                      _    \ 
+    |   _| |_  ____ _   _  ___ _| |_   |
+    |  (_   _)/ ___) | | |/___|_   _)  |
+    |    | |_| |   | |_| |___ | | |_   |
+    |     \__)_|   |____/(___/   \__)  |  
+     \________________________________/   
+                      _            
+                     (_)         _   
+        ____   ___   __    ___ _| |_ 
+       |  _ \ / _ \ (  |  / _ (_   _)
+       | |_| | |_| | | | | | | || |_ 
+       |  __/ \___/ (___)|_| |_| \__)
+       |_|
 
-    \b
-                        @
-                                     @
-        @ @@    @@@   @@@    @ @@   @@@@@
-        @@  @  @   @    @    @@  @   @
-        @   @  @   @    @    @   @   @  @
-        @@@@    @@@   @@@@@  @   @    @@
-        @
-        @
     """
 
 
@@ -60,7 +56,7 @@ def draw_ascii_logo() -> None:
 def draw_tp_client_description() -> None:
     """Draws the Trustpoint client description."""
     click.echo(f'\nWelcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) - v{version_id}!')
-    # draw_ascii_logo()
+    #draw_ascii_logo()
     click.echo('')
 
 
@@ -96,6 +92,13 @@ def provision(      # noqa: PLR0913
     click.echo('Successfully provisioned the Trustpoint-Client.')
 
 
+@cli.command()
+@click.option('--host', '-h', required=False, type=str, help='The IP or domain address of the Trustpoint.')
+def zero_touch_test(host: str) -> None:
+    """Tests the AOKI zero-touch provisioning of the Trustpoint-Client (excl. mDNS discovery)."""
+    aoki_onboarding(host)
+
+
 # TODO(Air): perhaps consider ACME for renewal (is quite complex though)
 @cli.command()
 @click.option(
@@ -125,19 +128,19 @@ def version() -> None:
 @click.option('--trust_store', '-t', is_flag=True, help='Add this flag to delete the HTTPs trust store.')
 @click.option('--ldevid', '-l', is_flag=True, help='Add this flag to delete the LDevID certificate and chain.')
 @click.option('--sn', '-s', is_flag=True, help='Add this flag to delete the device serial number.')
-@click.option('--all', '-a', is_flag=True, help='Add this flag to delete all local files managed by Trustpoint-Client.')
-def rm(*, trust_store: bool, ldevid: bool, sn: bool, all_: bool) -> None:
+@click.option('--rmall', '-a', is_flag=True, help='Add this flag to delete all local files managed by Trustpoint-Client.')
+def rm(*, trust_store: bool, ldevid: bool, sn: bool, rmall: bool) -> None:
     """Removes local files managed by Trustpoint-Client."""
     click.echo('Secure Removal is not yet implemented.')
-    if trust_store or all_:
+    if trust_store or rmall:
         click.echo('Removing trust store')
-        _delete_file('trust-store.pem')
-    if ldevid or all_:
+        _delete_file('tls_trust_store.pem')
+    if ldevid or rmall:
         click.echo('Removing LDevID certificate and chain')
         _delete_file('ldevid.pem')
         _delete_file('ldevid-private-key.pem')
         _delete_file('ldevid-certificate-chain.pem')
-    if sn or all_:
+    if sn or rmall:
         click.echo('Removing device serial number')
         _delete_file('tp-client-serial-no.txt')
 
@@ -146,7 +149,12 @@ def rm(*, trust_store: bool, ldevid: bool, sn: bool, all_: bool) -> None:
 @cli.command()
 def find() -> None:
     """Finds Trustpoint servers on the local network."""
-    mdns_find()
+    mdns_find(zero_touch=False)
+
+@cli.command()
+def start_zero_touch() -> None:
+    """Starts the zero-touch onboarding process."""
+    mdns_find(zero_touch=True)
 
 
 if __name__ == '__main__':

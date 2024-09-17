@@ -46,6 +46,31 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
 
         return self._provision_data
 
+    def provision_zero_touch(self, otp: str, device: str,
+                             host: str, port: int = 443, trust_store: str = '', domain : str = 'default') -> dict:
+        """Temporary zero-touch compatibility layer."""
+
+        self._provision_data = {
+            'otp': otp,
+            'device': device,
+            'host': host,
+            'port': port,
+            'domain': domain
+        }
+        # TODO: Do not hardcode algo
+        self._provision_data['algorithm'] = 'ECC'
+        self._provision_data['curve'] = 'SECP256R1'
+        self._provision_data['key-size'] = '256'
+        self._provision_data['crypto-key'] = self._get_key(
+            algorithm=self._provision_data['algorithm'],
+            curve=self._provision_data['curve'],
+            key_size=self._provision_data['key-size'])
+
+        self._provision_data['default-pki-protocol'] = PkiProtocol('REST')
+
+        self._provision_get_ldevid()
+
+        return self._provision_data
 
     def _provision_get_trust_store(self) -> None:
         host = self._provision_data['host']
@@ -130,7 +155,7 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
         # Let Trustpoint sign our CSR (auth via OTP and salt as username via HTTP basic auth)
         files = {'ldevid.csr': csr}
         ldevid_response = requests.post(
-            f'https://{host}/api/onboarding/ldevid/' + url_extension,
+            f'https://{host}:{port}/api/onboarding/ldevid/' + url_extension,
             auth=(salt, otp),
             files=files,
             # TODO
