@@ -20,6 +20,10 @@ def config_list():
     for key, value in client_config.list_config().items():
         if value is None:
             value = ''
+        if isinstance(value, PkiProtocol):
+            value = value.value
+        key = str(key)
+        value = str(value)
         table.add_row([str(key), str(value)])
     click.echo(f'\n{table}\n')
 
