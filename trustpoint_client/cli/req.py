@@ -1,14 +1,12 @@
 import click
+from pathlib import Path
+
+BASE_PATH = Path('__file__').resolve().parent / 'trustpoint_client/demo_data'
 
 
 @click.group
 def req():
     """Request a new certificate or trust-store."""
-
-
-@req.group(name='cert')
-def req_cert():
-    """Request a new certificate."""
 
 
 # TODO(AlexHx8472, Aircoookie): All req cert commands:
@@ -24,45 +22,99 @@ def req_cert():
 # TODO(AlexHx8472, Aircoookie):     If not contained, echo a remark
 # TODO(AlexHx8472, Aircoookie):     and offer with a click.confirm to execute get ca certs
 
-@req_cert.command(name='generic')
-def req_cert_generic():
+@req.command(name='generic-cert')
+def req_generic_cert():
     """Request a new generic certificate."""
 
 
-@req_cert.command(name='tls-client-cert')
-@click.option('--name', '-n', type=str, required=True)
-@click.option('--common-name', '-c', type=str, required=False)
-def req_tls_client_cert(name:str, common_name:str):
+@req.command(name='tls-client-cert')
+@click.option('--name', '-n', type=str, required=True, help='The name (handle) to identify the new certificate.')
+@click.option('--common-name', '-c', type=str, required=False, help='The common name to use.')
+@click.option('--subject', '-s', type=str, required=False, help='The subject to use.')
+def req_tls_client_cert(name:str, common_name: str, subject: str):
     """Request a new tls client certificate."""
     if not name.isidentifier():
         raise click.BadParameter('Name must be a valid identifier.')
 
     click.echo('\n\tTLS Client Certificate Issued.\n')
-    click.echo('\n\tCertificate Type: TLS Client Certificate.')
-    click.echo('')
+    click.echo('\tCertificate Type: TLS Client Certificate.')
+    click.echo(f'\tName (handle): {name}.')
+    if common_name:
+        click.echo(f'\tCommon Name: {common_name}.')
+    else:
+        click.echo(f'\tCommon Name: {name}.')
+    if subject:
+        click.echo(f'\tSubject: {subject}.')
+
+    click.echo()
+
+    click.echo('\tTLS Client Certificate:\n')
+    with (BASE_PATH / 'secp256-ee-cert.pem').open('r') as f:
+        click.echo(f.read())
+        click.echo('\n')
+
+    click.echo('\tTLS Client Certificate Chain:\n')
+    with (BASE_PATH / 'secp256-chain.pem').open('r') as f:
+        click.echo(f.read())
+
+    # TODO: Show certs
 
 
-@req_cert.command(name='tls-server-cert')
-def req_tls_server_cert():
+@req.command(name='tls-server-cert')
+@click.option('--name', '-n', type=str, required=True, help='The name (handle) to identify the new certificate.')
+@click.option('--common-name', '-c', type=str, required=False, help='The common name to use.')
+@click.option('--subject', '-s', type=str, required=False, help='The subject to use.')
+@click.option('--domains', '-d', type=str, required=False, help='The domains for the TLS Server Certificate.')
+@click.option('--ipv4-addresses', '-i', type=str, required=False, help='The IPv4 addresses for the TLS Server Certificate.')
+@click.option('--ipv6-addresses', '-j', type=str, required=False, help='The IPv6 addresses for the TLS Server Certificate.')
+def req_tls_server_cert(name: str, common_name: str, subject: str, domains: str, ipv4_addresses: str, ipv6_addresses: str):
     """Request a new tls server certificate."""
 
+    click.echo('\n\tTLS Server Certificate Issued.\n')
+    click.echo('\tCertificate Type: TLS Server Certificate.')
+    click.echo(f'\tName (handle): {name}.')
+    if common_name:
+        click.echo(f'\tCommon Name: {common_name}.')
+    else:
+        click.echo(f'\tCommon Name: {name}.')
+    if subject:
+        click.echo(f'\tSubject: {subject}.')
+    if domains:
+        click.echo(f'\tDomains: {domains}.')
+    if ipv4_addresses:
+        click.echo(f'\tIPv4 Addresses: {ipv4_addresses}.')
+    if ipv6_addresses:
+        click.echo(f'\tIPv6 Addresses: {ipv6_addresses}.')
 
-@req_cert.command(name='mqtt-client-cert')
+    click.echo()
+
+    click.echo('\tTLS Server Certificate:\n')
+    with (BASE_PATH / 'secp256-ee-cert.pem').open('r') as f:
+        click.echo(f.read())
+        click.echo('\n')
+
+    click.echo('\tTLS Server Certificate Chain:\n')
+    with (BASE_PATH / 'secp256-chain.pem').open('r') as f:
+        click.echo(f.read())
+
+
+
+@req.command(name='mqtt-client-cert')
 def req_mqtt_client_cert():
     """Request a new mqtt client certificate."""
 
 
-@req_cert.command(name='mqtt-server-cert')
+@req.command(name='mqtt-server-cert')
 def req_mqtt_server_cert():
     """Request a new mqtt server certificate."""
 
 
-@req_cert.command(name='opc-ua-client-cert')
+@req.command(name='opc-ua-client-cert')
 def req_opc_ua_client_cert():
     """Request a new opc ua client certificate."""
 
 
-@req_cert.command(name='opc-ua-server-cert')
+@req.command(name='opc-ua-server-cert')
 def req_opc_ua_server_cert():
     """Request a new opc ua server certificate."""
 
