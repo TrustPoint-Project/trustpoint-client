@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import click
 import traceback
 
 import requests
@@ -11,13 +12,13 @@ import urllib3
 HMAC_SIGNATURE_HTTP_HEADER = 'hmac-signature'
 DOMAIN= 'domain'
 
-
 from trustpoint_client.api.base import TrustpointClientBaseClass
 from trustpoint_client.api.schema import DomainInventory, Credential, PkiProtocol
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.primitives import hashes
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
+from enum import IntEnum
 
 from typing import TYPE_CHECKING
 
@@ -26,9 +27,31 @@ if TYPE_CHECKING:
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey]
 
 
+class ProvisioningState(IntEnum):
+    """Enum for the state of the provisioning process."""
+
+    ERROR = -1
+    NO_TRUST = 0
+    ONESIDED_TRUST = 1
+    MUTUAL_TRUST = 2
+
+
 class TrustpointClientProvision(TrustpointClientBaseClass):
 
+    _provisioning_state_callback = None
+
     _provision_data: dict
+
+    def _callback(self, state: ProvisioningState) -> None:
+        if self._provisioning_state_callback:
+            self._provisioning_state_callback(state)
+
+    def set_provisioning_state_callback(self, func: callable) -> None:
+        self._provisioning_state_callback = func
+
+    def set_provisioning_state(self, state: ProvisioningState) -> None:
+        """Temporary method to call the callback from zero touch onboarding methods"""
+        self._callback(state)
 
     def provision(self, otp: str, device: str, host: str, port: int = 443) -> dict:
 
@@ -39,9 +62,19 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
             'port': port
         }
 
+        self._callback(ProvisioningState.NO_TRUST)
+        
         self._provision_get_trust_store()
+        click.echo('Trust store retrieved successfully, requesting LDevID...')
+        self._callback(ProvisioningState.ONESIDED_TRUST)
+
         self._provision_get_ldevid()
+        click.echo('LDevID retrieved successfully, requesting LDevID chain...')
+        self._callback(ProvisioningState.MUTUAL_TRUST)
+
         self._provision_get_ldevid_chain()
+        click.echo('LDevID chain retrieved successfully, storing in inventory...')
+
         self._store_ldevid_in_inventory()
 
         return self._provision_data
@@ -69,6 +102,7 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
         self._provision_data['default-pki-protocol'] = PkiProtocol('REST')
 
         self._provision_get_ldevid()
+        self._callback(ProvisioningState.MUTUAL_TRUST)
 
         return self._provision_data
 

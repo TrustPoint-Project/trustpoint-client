@@ -67,7 +67,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
 from trustpoint_client.api.exceptions import ProvisioningError
-from trustpoint_client.api.provision import TrustpointClientProvision
+from trustpoint_client.api.provision import TrustpointClientProvision, ProvisioningState
 from trustpoint_client.cli import get_trustpoint_client
 
 logging.basicConfig(level=logging.DEBUG)
@@ -121,9 +121,11 @@ def _aoki_onboarding(host: str, port: int = 443):
     if os.path.exists('ldevid.pem'):
         log.info('LDevID already exists, aborting onboarding.')
         return
-    log.info(f'AOKI onboarding with Trustpoint server at {host} started')
+    
+    trustpoint_client = get_trustpoint_client()
+    trustpoint_client.set_provisioning_state(ProvisioningState.NO_TRUST)
 
-    log.info(os.getcwd())
+    log.info(f'AOKI onboarding with Trustpoint server at {host} started')
 
     # Step 2: Establish provisionally trusted TLS connection
     # Send onboarding request, including IDevID cert and a nonce for the server to sign to prove possession of the ownership key
@@ -176,6 +178,7 @@ def _aoki_onboarding(host: str, port: int = 443):
     verify_server_signature(response_bytes, ownership_cert=ownership_cert, server_signature=server_signature)
 
     click.echo('Ownership certificate verified!')
+    trustpoint_client.set_provisioning_state(ProvisioningState.ONESIDED_TRUST)
     
     # Step 4: If client-side verification is successful, sign server_nonce with IDevID private key and send back to server
     # TODO: Support all DevID conformant signature suites (RSA-2048/SHA-256, ECDSA P-256/SHA-256, ECDSA P-384/SHA-38)
@@ -232,7 +235,6 @@ def _aoki_onboarding(host: str, port: int = 443):
         except (x509.ExtensionNotFound, IndexError):
             serial_number = 'tpcl_' + secrets.token_urlsafe(12)
     
-    trustpoint_client = get_trustpoint_client()
     provision_data = trustpoint_client.provision_zero_touch(
         otp=otp, device=device_name, host=host, port=port, trust_store=server_tls_cert
     )
