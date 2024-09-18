@@ -69,6 +69,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from trustpoint_client.api.exceptions import ProvisioningError
 from trustpoint_client.api.provision import TrustpointClientProvision, ProvisioningState
 from trustpoint_client.cli import get_trustpoint_client
+from trustpoint_client.demo.callback_demo_leds import callback_demo
 
 logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
@@ -123,6 +124,7 @@ def _aoki_onboarding(host: str, port: int = 443):
         return
     
     trustpoint_client = get_trustpoint_client()
+    trustpoint_client.set_provisioning_state_callback(callback_demo)
     trustpoint_client.set_provisioning_state(ProvisioningState.NO_TRUST)
 
     log.info(f'AOKI onboarding with Trustpoint server at {host} started')

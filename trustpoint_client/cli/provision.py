@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import click
 from trustpoint_client.cli import get_trustpoint_client, handle_cli_error
+from trustpoint_client.demo.callback_demo_leds import callback_demo
 
 
 @click.command
@@ -15,6 +16,7 @@ from trustpoint_client.cli import get_trustpoint_client, handle_cli_error
 def provision(otp: str, device: str, host: str, port: int) -> None:
     """Provisions this device."""
     trustpoint_client = get_trustpoint_client()
+    trustpoint_client.set_provisioning_state_callback(callback_demo)
     result = trustpoint_client.provision(otp, device, host, port)
 
     click.echo('\n\tTrustpoint Client successfully provisioned.\n')
