@@ -200,8 +200,11 @@ def _aoki_onboarding(host: str, port: int = 443):
         headers = {'aoki-client-signature': base64.b64encode(signature)}
         
     print('Client Signature:', signature)
+    #response = requests.post('https://' + host + ':' + str(port) + '/api/onboarding/aoki/finalize',
+    #                         json=fin_data, verify='tls_trust_store.pem', timeout=6, headers=headers)
     response = requests.post('https://' + host + ':' + str(port) + '/api/onboarding/aoki/finalize',
-                             json=fin_data, verify='tls_trust_store.pem', timeout=6, headers=headers)
+                             json=fin_data, verify=False, timeout=6, headers=headers)
+
     if response.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(response.status_code)
         log.debug(response.text)
