@@ -33,9 +33,8 @@ def list_domain_credential():
     click.echo(f'\nDomain-Credential for Domain: {config.default_domain}:\n')
 
     click.echo(f'Domain: {config.default_domain}.')
-    # TODO: signature suite
-    click.echo('Signature-Suite: RSA4096-SHA256.')
-    click.echo(f'Default-PKI-Protocol: {config.pki_protocol}.')
+    click.echo('Signature-Suite: RSA2096-SHA256.')
+    click.echo(f'Default-PKI-Protocol: {config.pki_protocol.value}.')
     click.echo(f'\n\nPublic Key:\n\n{public_key}\n')
     click.echo(f'Certificate:\n\n{certificate}\n')
     click.echo(f'Certificate Chain:\n\n{certificate_chain}\n')

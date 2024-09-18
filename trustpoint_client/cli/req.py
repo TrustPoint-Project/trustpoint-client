@@ -39,6 +39,7 @@ def req_tls_client_cert(name:str, common_name: str, subject: str):
     click.echo('\n\tTLS Client Certificate Issued.\n')
     click.echo('\tCertificate Type: TLS Client Certificate.')
     click.echo(f'\tName (handle): {name}.')
+    click.echo(f'\tSignature-Suite: RSA2048-SHA256')
     if common_name:
         click.echo(f'\tCommon Name: {common_name}.')
     else:
@@ -49,12 +50,12 @@ def req_tls_client_cert(name:str, common_name: str, subject: str):
     click.echo()
 
     click.echo('\tTLS Client Certificate:\n')
-    with (BASE_PATH / 'secp256-ee-cert.pem').open('r') as f:
+    with (BASE_PATH / 'rsa2048-ee-cert.pem').open('r') as f:
         click.echo(f.read())
         click.echo('\n')
 
     click.echo('\tTLS Client Certificate Chain:\n')
-    with (BASE_PATH / 'secp256-chain.pem').open('r') as f:
+    with (BASE_PATH / 'rsa2048-chain.pem').open('r') as f:
         click.echo(f.read())
 
     # TODO: Show certs
@@ -73,6 +74,7 @@ def req_tls_server_cert(name: str, common_name: str, subject: str, domains: str,
     click.echo('\n\tTLS Server Certificate Issued.\n')
     click.echo('\tCertificate Type: TLS Server Certificate.')
     click.echo(f'\tName (handle): {name}.')
+    click.echo(f'\tSignature-Suite: RSA2048-SHA256')
     if common_name:
         click.echo(f'\tCommon Name: {common_name}.')
     else:
@@ -89,12 +91,12 @@ def req_tls_server_cert(name: str, common_name: str, subject: str, domains: str,
     click.echo()
 
     click.echo('\tTLS Server Certificate:\n')
-    with (BASE_PATH / 'secp256-ee-cert.pem').open('r') as f:
+    with (BASE_PATH / 'rsa2048-ee-cert.pem').open('r') as f:
         click.echo(f.read())
         click.echo('\n')
 
     click.echo('\tTLS Server Certificate Chain:\n')
-    with (BASE_PATH / 'secp256-chain.pem').open('r') as f:
+    with (BASE_PATH / 'rsa2048-chain.pem').open('r') as f:
         click.echo(f.read())
 
 
