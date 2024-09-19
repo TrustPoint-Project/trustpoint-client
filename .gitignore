@@ -4,8 +4,8 @@ __pycache__/
 *$py.class
 
 # (Testing) keys and certificates
-*.pem
-*.csr
+#*.pem
+#*.csr
 tpclient-serial-no.txt
 
 # C extensions
