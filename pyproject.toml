@@ -59,4 +59,4 @@ convention = "google"
 "rpi_led.py" = ["ERA001"]
 
 [tool.poetry.scripts]
-trustpoint-client = "trustpoint_client.__main__:cli.cli"
+trustpoint-client = "trustpoint_client.__main__:cli"
