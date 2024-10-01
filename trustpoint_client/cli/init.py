@@ -11,4 +11,3 @@ def init():
 
     trustpoint_client = get_trustpoint_client()
     trustpoint_client.init()
-    click.echo('\n\tSuccessfully initialized the Trustpoint Client.\n')

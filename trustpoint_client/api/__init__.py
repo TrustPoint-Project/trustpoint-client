@@ -68,21 +68,16 @@ class TrustpointClient(
             self.purge()
             return
 
-        if self.inventory_path.exists() and self.inventory_path.is_file():
-            try:
-                with self.inventory_path.open('r') as f:
-                    self._inventory = Inventory.model_validate_json(f.read())
-            except pydantic.ValidationError as exception:
-                raise TrustpointClientCorruptedError from exception
+        if not self.is_initialized():
+            self.init()
 
-        if self.config_path.exists() and self.config_path.is_file():
-            try:
-                with self.config_path.open('r') as f:
-                    self._config = TrustpointConfigModel.model_validate_json(f.read())
-                self._is_initialized = True
-            except pydantic.ValidationError as exception:
-                raise TrustpointClientCorruptedError from exception
-
+        try:
+            with self.inventory_path.open('r') as f:
+                self._inventory = Inventory.model_validate_json(f.read())
+            with self.config_path.open('r') as f:
+                self._config = TrustpointConfigModel.model_validate_json(f.read())
+        except pydantic.ValidationError as exception:
+            raise TrustpointClientCorruptedError from exception
 
 
     # ------------------------------------------ Trustpoint Client Properties ------------------------------------------
@@ -171,3 +166,6 @@ class TrustpointClient(
             self._config = config
         except Exception as exception:
             raise InventoryDataWriteError from exception
+
+    def is_initialized(self) -> bool:
+        return bool(self.inventory_path.is_file() and self.config_path.is_file())
