@@ -9,5 +9,4 @@ def init():
 
     draw_ascii_logo()
 
-    trustpoint_client = get_trustpoint_client()
-    trustpoint_client.init()
+    get_trustpoint_client()

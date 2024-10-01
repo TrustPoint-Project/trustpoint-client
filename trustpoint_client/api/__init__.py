@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from trustpoint_devid_module.cli import get_devid_module, DevIdModule
 from trustpoint_devid_module import exceptions as devid_exceptions
@@ -24,8 +25,8 @@ from trustpoint_client.api.provision import TrustpointClientProvision
 import pydantic
 
 
-WORKING_DIR = Path().home() / Path('.local') / Path('trustpoint') / Path('client')
-CONFIG_FILE_PATH = WORKING_DIR / Path('config.json')
+TRUSTPOINT_CLIENT_DIR = Path(os.getenv('TRUSTPOINT_CLIENT_DIR', Path.home()))
+CONFIG_FILE_PATH = TRUSTPOINT_CLIENT_DIR / Path('config.json')
 
 
 class TrustpointClient(
@@ -42,7 +43,7 @@ class TrustpointClient(
     _config_path: Path
     _config = None
 
-    def __init__(self, working_dir: Path, purge_init: bool = False) -> None: # noqa: FBT001, FBT002
+    def __init__(self, working_dir: Path = TRUSTPOINT_CLIENT_DIR, purge_init: bool = False) -> None:
         """Instantiates a TrustpointClient object with the desired working directory.
 
         Args:

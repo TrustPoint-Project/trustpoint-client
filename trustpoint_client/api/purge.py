@@ -1,4 +1,5 @@
 import shutil
+import click
 
 from trustpoint_client.api import handle_unexpected_errors, Inventory
 from trustpoint_client.api import (
@@ -21,17 +22,13 @@ class TrustpointClientPurge(TrustpointClientBaseClass):
             PurgeError: If the Trustpoint Client failed to purge and delete the working directory.
         """
         try:
-            self.devid_module.purge()
-        except devid_exceptions.NothingToPurgeError as exception:
-            raise NothingToPurgeError from exception
+            shutil.rmtree(self.working_dir)
+            click.echo('Client purged.')
         except Exception as exception:
             raise PurgeError from exception
 
-        try:
-            shutil.rmtree(self.working_dir)
-        except FileNotFoundError as exception:
-            raise NothingToPurgeError from exception
-        except Exception as exception:
-            raise PurgeError from exception
+        if self.devid_module:
+            self.devid_module.purge()
+            click.echo('DevID module purged')
 
         self._inventory = None

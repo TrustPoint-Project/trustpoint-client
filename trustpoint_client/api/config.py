@@ -1,7 +1,7 @@
 import ipaddress
 from pathlib import Path
 
-from trustpoint_client.api import CONFIG_FILE_PATH, WORKING_DIR
+from trustpoint_client.api import CONFIG_FILE_PATH, TRUSTPOINT_CLIENT_DIR, TrustpointClient
 from trustpoint_client.api.exceptions import ConfigDataWriteError
 from trustpoint_client.api.schema import PkiProtocol, TrustpointConfigModel
 
@@ -39,7 +39,7 @@ class TrustpointClientConfig:
     def _store_config(self, config: TrustpointConfigModel) -> None:
         try:
             if not self._config_path.exists():
-                Path.mkdir(WORKING_DIR, parents=True, exist_ok=False)
+                TrustpointClient(self.config_path.parent)
             self._config_path.write_text(config.model_dump_json())
             self._config = config
         except Exception as exception:

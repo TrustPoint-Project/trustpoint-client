@@ -39,7 +39,13 @@ Just download the package from Trustpoint during onboarding and transfer it to t
    pip install --upgrade pip
    pip install -r requirements.txt
    ```
-4. Execute program
+4. Set environment variabels
+   ```export TRUSTPOINT_CLIENT_DIR=~/.local/trustpoint/client
+   ```
+   Permanent setting
+   ```echo "export TRUSTPOINT_CLIENT_DIR=~/.local/trustpoint/client" >> ~/.bashrc
+   ```
+5. Execute program
    Trustpoint will generate and display the exact command for you during the onboarding process.
 
    Note that trustpoint_client executed below is the directory (as package), not the trustpoint_client.py file

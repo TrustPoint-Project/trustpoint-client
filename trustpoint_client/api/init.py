@@ -17,7 +17,6 @@ class TrustpointClientInit(TrustpointClientBaseClass):
     _inventory: None | Inventory
     _config: None | TrustpointConfigModel
 
-    # @click.command
     @handle_unexpected_errors(message='Failed to initialize the Trustpoint Client.')
     def init(self) -> None:
         """Initializes the Trustpoint Client.
