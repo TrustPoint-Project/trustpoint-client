@@ -1,13 +1,12 @@
 import os
+from pathlib import Path
 
 import click
 
-from trustpoint_client.api import TrustpointClient, WORKING_DIR, CONFIG_FILE_PATH
+from trustpoint_client.api import CONFIG_FILE_PATH, TRUSTPOINT_CLIENT_DIR, TrustpointClient
 from trustpoint_client.api.config import TrustpointClientConfig
-from trustpoint_client.cli.version import version_id
-from pathlib import Path
-
 from trustpoint_client.cli.decorator import handle_cli_error
+from trustpoint_client.cli.version import version_id
 
 CLI_DIRECTORY = str(Path(__file__).resolve().parent)
 
@@ -39,18 +38,18 @@ class TrustPointClientCli(click.MultiCommand):
 
 
 TRUSTPOINT_LOGO = r"""
-      ________________________________  
-     /    _                      _    \ 
+      ________________________________
+     /    _                      _    \
     |   _| |_  ____ _   _  ___ _| |_   |
     |  (_   _)/ ___) | | |/___|_   _)  |
     |    | |_| |   | |_| |___ | | |_   |
-    |     \__)_|   |____/(___/   \__)  |  
-     \________________________________/   
-                      _            
-                     (_)         _   
-        ____   ___   __    ___ _| |_ 
+    |     \__)_|   |____/(___/   \__)  |
+     \________________________________/
+                      _
+                     (_)         _
+        ____   ___   __    ___ _| |_
        |  _ \ / _ \ (  |  / _ (_   _)
-       | |_| | |_| | | | | | | || |_ 
+       | |_| | |_| | | | | | | || |_
        |  __/ \___/ (___)|_| |_| \__)
        |_|
 
@@ -71,7 +70,7 @@ def draw_tp_client_description() -> None:
 cli = TrustPointClientCli(help='Trust point client')
 
 
-def get_trustpoint_client(working_dir: Path = WORKING_DIR) -> TrustpointClient:
+def get_trustpoint_client(working_dir: Path = TRUSTPOINT_CLIENT_DIR) -> TrustpointClient:
     """Instantiates the TrustpointClient class with the desired working directory.
 
     Args:
@@ -80,10 +79,10 @@ def get_trustpoint_client(working_dir: Path = WORKING_DIR) -> TrustpointClient:
     Returns:
         TrustpointClient: An instance of the TrustpointClient class.
     """
-    return TrustpointClient(working_dir=working_dir, purge_init=False)
+    return TrustpointClient(working_dir=working_dir)
 
 
-def get_trustpoint_client_for_purge(working_dir: Path = WORKING_DIR) -> TrustpointClient:
+def get_trustpoint_client_for_purge(working_dir: Path = TRUSTPOINT_CLIENT_DIR) -> TrustpointClient:
     """Instantiates the TrustpointClient class with the desired working directory and the purge flag set to True.
 
     Args:
@@ -95,7 +94,7 @@ def get_trustpoint_client_for_purge(working_dir: Path = WORKING_DIR) -> Trustpoi
     return TrustpointClient(working_dir=working_dir, purge_init=True)
 
 
-def get_initialized_trustpoint_client(working_dir: Path = WORKING_DIR) -> None | TrustpointClient:
+def get_initialized_trustpoint_client(working_dir: Path = TRUSTPOINT_CLIENT_DIR) -> None | TrustpointClient:
     """Instantiates the TrustpointClient class and tries to load the stored DevID Module data.
 
     Args:
@@ -106,7 +105,7 @@ def get_initialized_trustpoint_client(working_dir: Path = WORKING_DIR) -> None |
             An instance of the TrustpointClient class if the initialization
             with existing data was successful, None otherwise.
     """
-    trustpoint_client = TrustpointClient(working_dir)
+    trustpoint_client = TrustpointClient(working_dir=working_dir)
     if trustpoint_client.inventory is None:
         click.echo('Trustpoint Client is not yet initialized.')
         return None
