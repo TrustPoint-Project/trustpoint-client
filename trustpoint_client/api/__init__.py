@@ -5,6 +5,9 @@ from pathlib import Path
 from trustpoint_devid_module.cli import get_devid_module, DevIdModule
 from trustpoint_devid_module import exceptions as devid_exceptions
 
+from platformdirs import user_data_dir
+import hashlib
+
 from trustpoint_client.api.exceptions import (
     TrustpointClientCorruptedError,
     NotInitializedError,
@@ -25,8 +28,13 @@ from trustpoint_client.api.provision import TrustpointClientProvision
 import pydantic
 
 
-TRUSTPOINT_CLIENT_DIR = Path(os.getenv('TRUSTPOINT_CLIENT_DIR', Path.home()))
-CONFIG_FILE_PATH = TRUSTPOINT_CLIENT_DIR / Path('config.json')
+def get_hashed_virtualenv_path() -> Path:
+    virtualenv_path = Path(os.getenv('VIRTUAL_ENV', Path.cwd()))  # Beispiel: aktuelle Arbeitsumgebung
+    hashed_path = hashlib.sha256(str(virtualenv_path).encode()).hexdigest()
+    return user_data_dir("trustpoint-client") / Path(hashed_path)
+
+TRUSTPOINT_CLIENT_DIR = Path(os.getenv('TRUSTPOINT_CLIENT_DIR', get_hashed_virtualenv_path()))
+CONFIG_FILE_PATH = TRUSTPOINT_CLIENT_DIR /Path('config.json')
 
 
 class TrustpointClient(

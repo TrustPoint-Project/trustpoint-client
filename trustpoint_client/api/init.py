@@ -1,4 +1,3 @@
-import click
 from pathlib import Path
 
 from trustpoint_client.api import Inventory, TrustpointConfigModel
@@ -74,5 +73,3 @@ class TrustpointClientInit(TrustpointClientBaseClass):
         except Exception as exception:
             raise InventoryDataWriteError from exception
         self._config = config
-
-        click.echo('\n\tSuccessfully initialized the Trustpoint Client.\n')

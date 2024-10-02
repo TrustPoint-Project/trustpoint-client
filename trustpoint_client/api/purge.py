@@ -1,5 +1,4 @@
 import shutil
-import click
 
 from trustpoint_client.api import handle_unexpected_errors, Inventory
 from trustpoint_client.api import (
@@ -23,12 +22,10 @@ class TrustpointClientPurge(TrustpointClientBaseClass):
         """
         try:
             shutil.rmtree(self.working_dir)
-            click.echo('Client purged.')
         except Exception as exception:
             raise PurgeError from exception
 
         if self.devid_module:
             self.devid_module.purge()
-            click.echo('DevID module purged')
 
         self._inventory = None
