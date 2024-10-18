@@ -66,6 +66,8 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
+from pathlib import Path
+
 from trustpoint_client.api.exceptions import ProvisioningError
 from trustpoint_client.api.provision import TrustpointClientProvision, ProvisioningState
 from trustpoint_client.cli import get_trustpoint_client
@@ -79,12 +81,17 @@ onboarding_lock = threading.Lock()
 
 HTTP_STATUS_OK = 200
 
+CERT_PATH = Path('__file__').resolve().parent / 'trustpoint_client/demo_data'
+
 def verify_ownership_cert(ownership_cert: bytes) -> bool:
     """Verifies the ownership certificate of the Trustpoint server is part of a PKI in the client trust store."""
     # TODO (Air): Implement proper PKI verification
     # For now, just do a file-level check against 'trust_store.pem'
-    with open('owner_cert_chain.pem', 'rb') as truststore:
+    with open(CERT_PATH / 'owner_cert_chain.pem', 'rb') as truststore:
         truststore_data = truststore.read()
+        # CRLF to LF if necessary
+        truststore_data = truststore_data.replace(b'\r\n', b'\n')
+        ownership_cert = ownership_cert.replace(b'\r\n', b'\n')
         print(ownership_cert)
         print('/////')
         print(truststore_data)
@@ -134,7 +141,7 @@ def _aoki_onboarding(host: str, port: int = 443):
 
     click.echo('Sending onboarding request to server...')
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    idevid = open('idevid_cert.pem', 'rb')
+    idevid = open(CERT_PATH / 'idevid_cert.pem', 'rb')
     client_nonce = secrets.token_hex(16)
     init_data = {'idevid': idevid.read().decode('utf-8'),
                  'client_nonce': client_nonce}
@@ -185,7 +192,7 @@ def _aoki_onboarding(host: str, port: int = 443):
     # Step 4: If client-side verification is successful, sign server_nonce with IDevID private key and send back to server
     # TODO: Support all DevID conformant signature suites (RSA-2048/SHA-256, ECDSA P-256/SHA-256, ECDSA P-384/SHA-38)
     # TODO: Integrate with DevID module
-    with open('tls_trust_store.pem', 'w') as tls_truststore:
+    with open(CERT_PATH / 'tls_trust_store.pem', 'w') as tls_truststore:
         tls_truststore.write(server_tls_cert)
 
     click.echo('Sending finalization request...')
@@ -199,16 +206,18 @@ def _aoki_onboarding(host: str, port: int = 443):
     hash.update(fin_bytes)
     log.debug(f'SHA-256 hash of message: {hash.finalize().hex()}')
 
-    with open('idevid_private.key', 'rb') as keyfile:
+    with open(CERT_PATH / 'idevid_private.key', 'rb') as keyfile:
         idevid_private_key = serialization.load_pem_private_key(keyfile.read(), password=None)
         signature = idevid_private_key.sign(fin_bytes, ec.ECDSA(hashes.SHA256()))
         headers = {'aoki-client-signature': base64.b64encode(signature)}
         
     print('Client Signature:', signature)
-    #response = requests.post('https://' + host + ':' + str(port) + '/api/onboarding/aoki/finalize',
-    #                         json=fin_data, verify='tls_trust_store.pem', timeout=6, headers=headers)
+    tls_server_cert_path = CERT_PATH / 'tls_trust_store.pem'
     response = requests.post('https://' + host + ':' + str(port) + '/api/onboarding/aoki/finalize',
-                             json=fin_data, verify=False, timeout=6, headers=headers)
+                             json=fin_data, verify=tls_server_cert_path, timeout=6, headers=headers)
+    # No verify (demo purposes only)
+    #response = requests.post('https://' + host + ':' + str(port) + '/api/onboarding/aoki/finalize',
+    #                         json=fin_data, verify=False, timeout=6, headers=headers)
 
     if response.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(response.status_code)
@@ -230,7 +239,7 @@ def _aoki_onboarding(host: str, port: int = 443):
     
     click.echo('Received OTP from server, proceeding to LDevID enrollment...')
     
-    with open('idevid_cert.pem', 'rb') as idevid:
+    with open(CERT_PATH / 'idevid_cert.pem', 'rb') as idevid:
         idevid_cert = x509.load_pem_x509_certificate(idevid.read())
         try:
             serial_number = idevid_cert.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value

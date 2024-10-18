@@ -6,7 +6,7 @@ import traceback
 import requests
 import hashlib
 import hmac
-
+import os
 import urllib3
 
 HMAC_SIGNATURE_HTTP_HEADER = 'hmac-signature'
@@ -19,6 +19,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from enum import IntEnum
+from pathlib import Path
 
 from typing import TYPE_CHECKING
 
@@ -26,6 +27,8 @@ if TYPE_CHECKING:
     from typing import Union
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey]
 
+
+CERT_PATH = Path('__file__').resolve().parent / 'trustpoint_client/demo_data'
 
 class ProvisioningState(IntEnum):
     """Enum for the state of the provisioning process."""
@@ -76,6 +79,8 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
         click.echo('LDevID chain retrieved successfully, storing in inventory...')
 
         self._store_ldevid_in_inventory()
+        # delete temporary trust store file
+        os.remove(CERT_PATH / 'tls_trust_store.pem')
 
         return self._provision_data
 
@@ -140,6 +145,9 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
             raise RuntimeError('HMACs do not match.')
 
         self._provision_data['trust_store'] = response.content.decode()
+        # store in temporary file
+        with open(CERT_PATH / 'tls_trust_store.pem', 'w') as f:
+            f.write(self._provision_data['trust_store'])
 
     @staticmethod
     def _get_key(algorithm: str, curve: str, key_size: str) -> PrivateKey:
@@ -193,7 +201,7 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
             auth=(salt, otp),
             files=files,
             # TODO
-            verify=False,
+            verify= CERT_PATH / 'tls_trust_store.pem',
             timeout=10
         )
         if ldevid_response.status_code != 200:
@@ -208,7 +216,7 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
         port = self._provision_data['port']
         cert_chain = requests.get(
             f'https://{host}:{port}/api/onboarding/ldevid/cert-chain/{url_extension}',
-            verify=False,
+            verify= CERT_PATH / 'tls_trust_store.pem',
             # cert=('ldevid.pem', 'ldevid-private-key.pem'),
             timeout=10,
         )
