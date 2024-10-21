@@ -17,6 +17,10 @@ def provision(otp: str, device: str, host: str, port: int) -> None:
     """Provisions this device."""
     trustpoint_client = get_trustpoint_client()
     trustpoint_client.set_provisioning_state_callback(callback_demo)
+    # check if host contains a port
+    if ':' in host:
+        host, port = host.split(':')
+        port = int(port)
     result = trustpoint_client.provision(otp, device, host, port)
 
     click.echo('\n\tTrustpoint Client successfully provisioned.\n')
