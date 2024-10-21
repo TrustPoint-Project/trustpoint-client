@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import click
-from trustpoint_client.cli import get_trustpoint_client, handle_cli_error
+from trustpoint_client.cli import get_trustpoint_client
 from trustpoint_client.api.mdns import find_services
 from trustpoint_client.api.zero_touch_aoki import aoki_onboarding
 

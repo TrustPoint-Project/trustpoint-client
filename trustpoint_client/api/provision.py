@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import click
-import traceback
 
 import requests
 import hashlib
