@@ -66,7 +66,7 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
         }
 
         self._callback(ProvisioningState.NO_TRUST)
-        
+
         self._provision_get_trust_store()
         click.echo('Trust store retrieved successfully, requesting LDevID...')
         self._callback(ProvisioningState.ONESIDED_TRUST)
