@@ -1,19 +1,19 @@
 import click
 from trustpoint_devid_module.serializer import CertificateCollectionSerializer
 
-from trustpoint_client.cli import get_trustpoint_client, handle_cli_error
+from trustpoint_client.cli import handle_cli_error
+from trustpoint_client.api import TrustpointClient
 
 
 @click.group()
 def list_():
     """Lists keys, certificates and/or trust-stores."""
 
-
 @list_.command(name='domain-credential')
-@handle_cli_error
+# @handle_cli_error
 def list_domain_credential():
     """Lists the domain credential."""
-    trustpoint_client = get_trustpoint_client()
+    trustpoint_client = TrustpointClient()
     config = trustpoint_client.config
     inventory = trustpoint_client.inventory
     devid_module = trustpoint_client.devid_module
@@ -34,18 +34,25 @@ def list_domain_credential():
 
     click.echo(f'Domain: {config.default_domain}.')
     click.echo('Signature-Suite: RSA2096-SHA256.')
-    click.echo(f'Default-PKI-Protocol: {config.pki_protocol.value}.')
+    click.echo(f'Default-PKI-Protocol: {config.default_pki_protocol.value}.')
     click.echo(f'\n\nPublic Key:\n\n{public_key}\n')
     click.echo(f'Certificate:\n\n{certificate}\n')
     click.echo(f'Certificate Chain:\n\n{certificate_chain}\n')
     click.echo(f'Trust-Store for verifying the Trustpoint TLS-Server Certificate:\n\n{inventory.domains[config.default_domain].ldevid_trust_store}\n')
 
-
-
 @list_.command(name='credential')
+@click.argument('unique-name', type=str)
+def list_credential(unique_name: str):
+    """List the credential with the given unique name."""
+
+@list_.command(name='credentials')
 def list_credentials():
     """Lists all available keys."""
 
+@list_.command(name='trust-store')
+@click.argument('unique-name', type=str)
+def list_truststore(unique_name: str):
+    """List the trust-store with the given unique name."""
 
 @list_.command(name='trust-stores')
 def list_trust_stores():

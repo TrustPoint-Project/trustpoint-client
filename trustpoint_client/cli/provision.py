@@ -3,7 +3,9 @@ from __future__ import annotations
 
 
 import click
-from trustpoint_client.cli import get_trustpoint_client, handle_cli_error
+
+from trustpoint_client.api import TrustpointClient
+from trustpoint_client.cli import handle_cli_error
 
 
 @click.command
@@ -11,10 +13,9 @@ from trustpoint_client.cli import get_trustpoint_client, handle_cli_error
 @click.option('--device', '-d', required=True, type=str, help='The device name.')
 @click.option('--host', '-h', required=True, type=str, help='The domain name or IP address of the trustpoint.')
 @click.option('--port', '-p', required=False, type=int, default=443, help='The port of the trustpoint if not 443.')
-@handle_cli_error
 def provision(otp: str, device: str, host: str, port: int) -> None:
     """Provisions this device."""
-    trustpoint_client = get_trustpoint_client()
+    trustpoint_client = TrustpointClient()
     # check if host contains a port
     if ':' in host:
         host, port = host.split(':')
@@ -26,11 +27,5 @@ def provision(otp: str, device: str, host: str, port: int) -> None:
     click.echo(f'\tTrustpoint-Host: {result["host"]}:{result["port"]}.')
     click.echo(f'\tDefault-Domain: {result["domain"]}.')
     click.echo(f'\tDefault-PKI-Protocol: {result["default-pki-protocol"].value}.')
-    if result['algorithm'] == 'RSA':
-        click.echo(f'\tSignature-Suite: RSA{result["key-size"]}-SHA256.')
-    if result['algorithm'] == 'ECC':
-        if result['curve'] == 'SECP256R1':
-            click.echo(f'\tSignature-Suite: SECP256R1-SHA256.')
-        else:
-            click.echo(f'\tSignature-Suite: SECP384R1-SHA384.')
+    click.echo(f'\tDefault-Signature-Suite: {result["default-signature-suite"].value}.')
     click.echo()

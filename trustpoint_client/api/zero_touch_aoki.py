@@ -65,15 +65,14 @@ from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from enum import IntEnum
 
 from pathlib import Path
 
 from trustpoint_client.api.exceptions import ProvisioningError
-from trustpoint_client.api.provision import ProvisioningState
-from trustpoint_client.cli import get_trustpoint_client
+from trustpoint_client.api import TrustpointClient
 
-logging.basicConfig(level=logging.DEBUG)
-#logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('tpclient.aoki')
 
 onboarding_lock = threading.Lock()
@@ -81,6 +80,14 @@ onboarding_lock = threading.Lock()
 HTTP_STATUS_OK = 200
 
 CERT_PATH = Path('__file__').resolve().parent / 'trustpoint_client/demo_data'
+
+class ProvisioningState(IntEnum):
+    """Enum for the state of the provisioning process."""
+
+    ERROR = -1
+    NO_TRUST = 0
+    ONESIDED_TRUST = 1
+    MUTUAL_TRUST = 2
 
 def verify_ownership_cert(ownership_cert: bytes) -> bool:
     """Verifies the ownership certificate of the Trustpoint server is part of a PKI in the client trust store."""
@@ -129,7 +136,7 @@ def _aoki_onboarding(host: str, port: int = 443):
         log.info('LDevID already exists, aborting onboarding.')
         return
     
-    trustpoint_client = get_trustpoint_client()
+    trustpoint_client = TrustpointClient()
     trustpoint_client.set_provisioning_state(ProvisioningState.NO_TRUST)
 
     log.info(f'AOKI onboarding with Trustpoint server at {host} started')

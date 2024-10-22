@@ -2,6 +2,6 @@
 import click
 
 
-@click.command()
+@click.command
 def status():
     """Displays the current status of Trustpoint-Client."""

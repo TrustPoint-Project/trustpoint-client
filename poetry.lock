@@ -944,22 +944,23 @@ files = [
 
 [[package]]
 name = "trustpoint-devid-module"
-version = "0.0.4"
+version = "0.0.5"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "trustpoint_devid_module-0.0.4-py3-none-any.whl", hash = "sha256:0f86301a3aa8a69aa6136857176f337fca0514004e2a0d18c9cef402b6a24421"},
-    {file = "trustpoint_devid_module-0.0.4.tar.gz", hash = "sha256:bc3512bb57d49c932ef5f4d6860aeb433a362741ee12186f23512a8a85344af8"},
+    {file = "trustpoint_devid_module-0.0.5-py3-none-any.whl", hash = "sha256:746c890277a7a8f0d90d2456ae28ba8049f37ea20e3694f8cfe0ba3214b33f8c"},
+    {file = "trustpoint_devid_module-0.0.5.tar.gz", hash = "sha256:35911268e5b45972a64907ca5496b166ea2cb11d0c9a9e8afbbea3524ee79493"},
 ]
 
 [package.dependencies]
 click = ">=8.1.7,<9.0.0"
-cryptography = ">=43.0.1,<44.0.0"
+cryptography = ">=43.0.3,<44.0.0"
+platformdirs = ">=4.3.6,<5.0.0"
 prettytable = ">=3.11.0,<4.0.0"
-pyasn1 = ">=0.6.0,<0.7.0"
-pyasn1-modules = ">=0.4.0,<0.5.0"
-pydantic = ">=2.8.2,<3.0.0"
+pyasn1 = ">=0.6.1,<0.7.0"
+pyasn1-modules = ">=0.4.1,<0.5.0"
+pydantic = ">=2.9.2,<3.0.0"
 
 [[package]]
 name = "typing-extensions"
@@ -1083,4 +1084,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "db934fb532cc5280dfbb2b0996dc44eac6768b8769426294df6ad2a3f2efa2dc"
+content-hash = "892c38c07f9f6b9e6519ac2aa3fc43f42ae8278440812000df4a8f445f9062c0"

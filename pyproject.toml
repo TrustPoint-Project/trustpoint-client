@@ -9,12 +9,12 @@ readme = "README.md"
 python = "^3.10"
 click = "^8.1.7"
 requests = "^2.32.3"
-trustpoint-devid-module = "^0.0.4"
 pydantic = "^2.9.1"
 prettytable = "^3.11.0"
 platformdirs = "^4.3.6"
 cryptography = "^43.0.3"
 zeroconf = "^0.135.0"
+trustpoint-devid-module = "^0.0.5"
 
 [build-system]
 requires = ["poetry-core"]

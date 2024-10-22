@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import click
-from trustpoint_client.cli import get_trustpoint_client
 from trustpoint_client.api.mdns import find_services
 from trustpoint_client.api.zero_touch_aoki import aoki_onboarding
+from trustpoint_client.api import TrustpointClient
 
 
 @click.group()
@@ -18,7 +18,7 @@ def zero_touch():
 def zero_touch_start(host: str, port: int):
     """Starts the AOKI demo zero-touch onboarding process."""
 
-    trustpoint_client = get_trustpoint_client()
+    trustpoint_client = TrustpointClient()
 
     if host is None: # regular zero-touch onboarding with mDNS discovery
         find_services(zero_touch=True)

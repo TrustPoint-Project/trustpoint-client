@@ -16,11 +16,11 @@ class PkiProtocol(enum.Enum):
 
 class SignatureSuite(enum.Enum):
 
-    RSA2048 = 'RSA2048'
-    RSA3072 = 'RSA3072'
-    RSA4096 = 'RSA4096'
-    SECP256R1 = 'SECP256R1'
-    SECP384R1 = 'SECP384R1'
+    RSA2048 = 'RSA2048SHA256'
+    RSA3072 = 'RSA3072SHA256'
+    RSA4096 = 'RSA4096SHA256'
+    SECP256R1 = 'SECP256R1SHA256'
+    SECP384R1 = 'SECP384R1SHA384'
 
 
 class TrustpointConfigModel(BaseModel):
@@ -28,12 +28,10 @@ class TrustpointConfigModel(BaseModel):
 
     model_config = ConfigDict(strict=True, extra='allow')
 
-    device_id: None | int = ...
-
     trustpoint_ipv4: None | ipaddress.IPv4Address = ...
-    # trustpoint_ipv6: None | ipaddress.IPv6Address = ...
-    # trustpoint_domain: None | str = ...
     trustpoint_port: None | int = ...
 
     default_domain: None | str = ...
-    pki_protocol: None | PkiProtocol = ...
+    default_pki_protocol: None | PkiProtocol = ...
+
+    default_signature_suite: None | SignatureSuite = ...
