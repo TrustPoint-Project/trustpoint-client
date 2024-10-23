@@ -24,6 +24,7 @@ from trustpoint_client.api.decorator import handle_unexpected_errors
 from trustpoint_client.api.schema import Inventory, TrustpointConfigModel
 from trustpoint_client.api.provision import TrustpointClientProvision
 from trustpoint_client.api.config import TrustpointConfig
+from trustpoint_client.api.domain import TrustpointClientDomain
 
 import pydantic
 
@@ -79,7 +80,8 @@ def purge_working_dir_inventory_and_config() -> None:
 
 class TrustpointClient(
     TrustpointClientProvision,
-    TrustpointConfig):
+    TrustpointConfig,
+    TrustpointClientDomain):
     """The Trustpoint Client class."""
 
     _inventory_file_path: Path
