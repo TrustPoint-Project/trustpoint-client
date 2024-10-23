@@ -31,6 +31,8 @@ class TrustPointClientCli(click.MultiCommand):
             return ns['list_']
         if name == 'del':
             return ns['del_']
+        if name == 'domain':
+            return ns['domain_']
         else:
             return ns[name]
 
