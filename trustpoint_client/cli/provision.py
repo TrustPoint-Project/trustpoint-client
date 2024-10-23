@@ -26,6 +26,6 @@ def provision(otp: str, device: str, host: str, port: int) -> None:
     click.echo(f'\tDevice: {result["device"]}.')
     click.echo(f'\tTrustpoint-Host: {result["host"]}:{result["port"]}.')
     click.echo(f'\tDefault-Domain: {result["domain"]}.')
-    click.echo(f'\tDefault-PKI-Protocol: {result["default-pki-protocol"].value}.')
-    click.echo(f'\tDefault-Signature-Suite: {result["default-signature-suite"].value}.')
+    click.echo(f'\tPKI-Protocol: {result["pki-protocol"].value}.')
+    click.echo(f'\tSignature-Suite: {result["signature-suite"].value}.')
     click.echo()

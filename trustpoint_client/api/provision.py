@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 import click
 
 import requests
@@ -10,7 +8,7 @@ import hmac
 from pathlib import Path
 import urllib3
 
-from trustpoint_client.api.schema.config import SignatureSuite
+from trustpoint_client.api.schema.inventory import SignatureSuite
 
 HMAC_SIGNATURE_HTTP_HEADER = 'hmac-signature'
 
@@ -76,9 +74,9 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
             raise ValueError('HMAC missing in HTTP header.')
 
         self._provision_data['domain'] = response.headers['domain']
-        self._provision_data['default-signature-suite'] = SignatureSuite(response.headers['signature-suite'])
-        self._provision_data['default-pki-protocol'] = PkiProtocol(response.headers['pki-protocol'])
-        self._provision_data['crypto-key'] = self._get_key(self._provision_data['default-signature-suite'])
+        self._provision_data['signature-suite'] = SignatureSuite(response.headers['signature-suite'])
+        self._provision_data['pki-protocol'] = PkiProtocol(response.headers['pki-protocol'])
+        self._provision_data['crypto-key'] = self.generate_new_key(self._provision_data['signature-suite'])
 
         pbkdf2_iter = 1000000
         derived_key = hashlib.pbkdf2_hmac('sha256', otp, salt, pbkdf2_iter, dklen=32)
@@ -89,7 +87,7 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
         self._provision_data['trust-store'] = response.content.decode()
 
     @staticmethod
-    def _get_key(signature_suite: SignatureSuite) -> PrivateKey:
+    def generate_new_key(signature_suite: SignatureSuite) -> PrivateKey:
         rsa_public_exponent = 65537
         if signature_suite == SignatureSuite.RSA2048:
             return rsa.generate_private_key(public_exponent=rsa_public_exponent, key_size=2048)
@@ -112,7 +110,7 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
         port = self._provision_data['port']
         key = self._provision_data['crypto-key']
 
-        if self._provision_data['default-signature-suite'] == SignatureSuite.SECP384R1:
+        if self._provision_data['signature-suite'] == SignatureSuite.SECP384R1:
             hash_algo = hashes.SHA384
         else:
             hash_algo = hashes.SHA256
@@ -167,7 +165,6 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
 
         config.trustpoint_port = int(self._provision_data['port'])
         config.default_domain = self._provision_data['domain']
-        config.default_pki_protocol = self._provision_data['default-pki-protocol']
         self._store_config(config)
 
         ldevid_key_index = self.devid_module.insert_ldevid_key(self._provision_data['crypto-key'])
@@ -185,9 +182,11 @@ class TrustpointClientProvision(TrustpointClientBaseClass):
             certificate_indices=[]
         )
         inventory.domains[self._provision_data['domain']] = DomainInventory(
+            signature_suite=self._provision_data['signature-suite'],
+            pki_protocol = self._provision_data['pki-protocol'],
             ldevid_trust_store=self._provision_data['trust-store'],
             ldevid_credential=ldevid_credential,
             credentials={},
-            trust_stores={}
+            trust_stores={},
         )
         self._store_inventory(inventory)
