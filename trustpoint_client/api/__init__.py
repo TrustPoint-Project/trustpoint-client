@@ -54,8 +54,6 @@ def initialize_working_dir_inventory_and_config() -> None:
         trustpoint_ipv4=None,
         trustpoint_port=None,
         default_domain=None,
-        default_pki_protocol=None,
-        default_signature_suite=None
     )
 
     try:

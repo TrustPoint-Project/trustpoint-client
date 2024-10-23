@@ -102,6 +102,7 @@ Extension Options:
 def req_generic_cert(subject: list[str], extension: list[str]) -> None:
     """Request a new generic certificate."""
     trustpoint_client = TrustpointClient()
+    # no more default pki protocol
     if trustpoint_client.config.default_pki_protocol == PkiProtocol.CMP:
         _reg_cmp_cert(trustpoint_client=trustpoint_client, subject=subject, extension=extension)
 

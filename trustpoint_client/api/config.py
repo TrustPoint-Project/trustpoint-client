@@ -38,24 +38,6 @@ class TrustpointConfig(TrustpointClientBaseClass):
         self._store_config(config)
 
     @property
-    def default_pki_protocol(self) -> None | str:
-        if self.config:
-            return self.config.default_pki_protocol
-        return None
-
-    @default_pki_protocol.setter
-    def default_pki_protocol(self, default_pki_protocol: None | str) -> None:
-        config = self.config
-        config.default_pki_protocol = default_pki_protocol
-        self._store_config(config)
-
-    @default_pki_protocol.deleter
-    def default_pki_protocol(self) -> None:
-        config = self.config
-        config.default_pki_protocol = None
-        self._store_config(config)
-
-    @property
     def trustpoint_ipv4(self) -> None | str:
         if self.config:
             return self.config.trustpoint_ipv4

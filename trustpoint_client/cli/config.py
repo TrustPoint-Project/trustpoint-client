@@ -1,9 +1,9 @@
 import click
 from prettytable import PrettyTable
 from enum import Enum
+import ipaddress
 
 from trustpoint_client.api import TrustpointClient
-from trustpoint_client.api.schema import PkiProtocol
 
 
 @click.group
@@ -44,14 +44,23 @@ def config_get_default_domain():
     else:
         click.echo('\n\tNo default domain configured.\n')
 
-@config_get.command(name='default-pki-protocol')
-def config_get_default_pki_protocol():
-    """Gets the current default trustpoint domain."""
-    default_pki_protocol = TrustpointClient().default_pki_protocol
-    if default_pki_protocol:
-        click.echo(f'\n\tDefault pki protocol: {default_pki_protocol}.\n')
+@config_get.command(name='ipv4')
+def config_get_trustpoint_ipv4():
+    """Gets the current Trustpoint IPv4 address."""
+    trustpoint_ipv4 = TrustpointClient().trustpoint_ipv4
+    if trustpoint_ipv4:
+        click.echo(f'\n\tTrustpoint IPv4 address: {trustpoint_ipv4}\n')
     else:
-        click.echo('\n\tNo default pki protocol configured.\n')
+        click.echo('\n\tNo Trustpoint IPv4 address configured.\n')
+
+@config_get.command(name='port')
+def config_get_trustpoint_port():
+    """Gets the current Trustpoint port."""
+    trustpoint_port = TrustpointClient().trustpoint_port
+    if trustpoint_port:
+        click.echo(f'\n\tTrustpoint port: {trustpoint_port}\n')
+    else:
+        click.echo('\n\tNo Trustpoint port configured.\n')
 
 # --------------------------------------------------- Config Setter ----------------------------------------------------
 
@@ -66,12 +75,19 @@ def config_set_default_domain(domain: str):
     TrustpointClient().default_domain = domain
     click.echo(f'\n\tDefault domain configured: {domain}.\n')
 
-@config_set.command(name='default-pki-protocol')
-@click.argument('default-pki-protocol', type=str)
-def config_set_default_pki_protocol(default_pki_protocol: str):
-    """Sets / overwrites the default trustpoint domain."""
-    TrustpointClient().default_pki_protocol = default_pki_protocol
-    click.echo(f'\n\tDefault pki protocol configured: {default_pki_protocol}.\n')
+@config_set.command(name='ipv4')
+@click.argument('trustpoint_ipv4', type=ipaddress.IPv4Address)
+def config_set_trustpoint_ipv4(trustpoint_ipv4: ipaddress.IPv4Address):
+    """Sets / overwrites the Trustpoint IPv4 address."""
+    TrustpointClient().trustpoint_ipv4 = trustpoint_ipv4
+    click.echo(f'\n\tTrustpoint IPv4 address configured: {trustpoint_ipv4}\n')
+
+@config_set.command(name='port')
+@click.argument('trustpoint_port', type=int)
+def config_set_trustpoint_port(trustpoint_port: int):
+    """Sets / overwrites the Trustpoint port."""
+    TrustpointClient().trustpoint_port = trustpoint_port
+    click.echo(f'\n\tTrustpoint port configured: {trustpoint_port}\n')
 
 # --------------------------------------------------- Config Clearer ---------------------------------------------------
 
@@ -95,19 +111,32 @@ def config_clear_default_domain():
 
     click.echo(f'\n\tAborted.\n')
 
-@config_clear.command(name='default-pki-protocol')
-def config_clear_default_pki_protocol():
-    """Clears the default trustpoint domain."""
-    if TrustpointClient().default_pki_protocol is None:
-        click.echo('\n\tNo default pki protocol configured. Nothing to clear.\n')
+@config_clear.command(name='ipv4')
+def config_clear_trustpoint_ipv4():
+    """Clears the Trustpoint IPv4 address."""
+    if TrustpointClient().trustpoint_ipv4 is None:
+        click.echo('\n\tNo Trustpoint IPv4 address configured. Nothing to clear.\n')
         return
 
     if click.confirm(
-            'Are you sure to clear the default pki protocol? '
-            'You will have to explicitly state the pki protocol to '
-            'use with every command if no default pki protocol is set.'):
-        del TrustpointClient().default_pki_protocol
-        click.echo(f'\n\tDefault pki protocol cleared.\n')
+            'Are you sure to clear the Trustpoint IPv4 Address?'):
+        del TrustpointClient().trustpoint_ipv4
+        click.echo(f'\n\tTrustpoint IPv4 address cleared.\n')
+        return
+
+    click.echo(f'\n\tAborted.\n')
+
+@config_clear.command(name='port')
+def config_clear_trustpoint_port():
+    """Clears the Trustpoint port."""
+    if TrustpointClient().trustpoint_port is None:
+        click.echo('\n\tNo Trustpoint port configured. Nothing to clear.\n')
+        return
+
+    if click.confirm(
+            'Are you sure to clear the Trustpoint port?'):
+        del TrustpointClient().trustpoint_port
+        click.echo(f'\n\tTrustpoint port cleared.\n')
         return
 
     click.echo(f'\n\tAborted.\n')
