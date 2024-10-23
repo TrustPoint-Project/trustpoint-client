@@ -1,14 +1,24 @@
 """Module that contains the pydantic models to store and load the Trustpoint Client data."""
 from __future__ import annotations
 
+import enum
 from pydantic import BaseModel, ConfigDict
 
+class SignatureSuite(enum.Enum):
 
-class Certificate(BaseModel):
-    model_config = ConfigDict(strict=True, extra='forbid')
+    RSA2048 = 'RSA2048SHA256'
+    RSA3072 = 'RSA3072SHA256'
+    RSA4096 = 'RSA4096SHA256'
+    SECP256R1 = 'SECP256R1SHA256'
+    SECP384R1 = 'SECP384R1SHA384'
 
-    certificate_index: int = ...
-    revoked: bool = ...
+
+class PkiProtocol(enum.Enum):
+
+    CMP = 'CMP'
+    EST = 'EST'
+    SCEP = 'SCEP'
+    REST = 'REST'
 
 
 class Credential(BaseModel):
@@ -21,6 +31,9 @@ class Credential(BaseModel):
 
 class DomainInventory(BaseModel):
     model_config = ConfigDict(strict=True, extra='forbid')
+
+    signature_suite: SignatureSuite = ...
+    pki_protocol: PkiProtocol = ...
 
     ldevid_trust_store: str = ...
     ldevid_credential: Credential = ...
