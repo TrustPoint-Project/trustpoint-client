@@ -14,7 +14,7 @@ prettytable = "^3.11.0"
 platformdirs = "^4.3.6"
 cryptography = "^43.0.3"
 zeroconf = "^0.135.0"
-trustpoint-devid-module = "^0.0.5"
+trustpoint-devid-module = "0.0.6"
 
 [build-system]
 requires = ["poetry-core"]

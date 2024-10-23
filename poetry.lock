@@ -944,13 +944,13 @@ files = [
 
 [[package]]
 name = "trustpoint-devid-module"
-version = "0.0.5"
+version = "0.0.6"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "trustpoint_devid_module-0.0.5-py3-none-any.whl", hash = "sha256:746c890277a7a8f0d90d2456ae28ba8049f37ea20e3694f8cfe0ba3214b33f8c"},
-    {file = "trustpoint_devid_module-0.0.5.tar.gz", hash = "sha256:35911268e5b45972a64907ca5496b166ea2cb11d0c9a9e8afbbea3524ee79493"},
+    {file = "trustpoint_devid_module-0.0.6-py3-none-any.whl", hash = "sha256:734d2ab0388e71a9be32a416d424dbfbe5dd1b6024f2bf115cc1c6aa356fa941"},
+    {file = "trustpoint_devid_module-0.0.6.tar.gz", hash = "sha256:ab026672c79164e10740a5454aa536deaa9fb7b6cfe42dd5aa278026351957b3"},
 ]
 
 [package.dependencies]
@@ -1084,4 +1084,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "892c38c07f9f6b9e6519ac2aa3fc43f42ae8278440812000df4a8f445f9062c0"
+content-hash = "9f2f22dba86e9b5d3307c88bcd3798ca9a2719a7af4242e625a4c774d609ab9d"
