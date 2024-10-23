@@ -33,12 +33,14 @@ def list_domain_credential():
     click.echo(f'\nDomain-Credential for Domain: {config.default_domain}:\n')
 
     click.echo(f'Domain: {config.default_domain}.')
-    click.echo('Signature-Suite: RSA2096-SHA256.')
-    click.echo(f'Default-PKI-Protocol: {config.default_pki_protocol.value}.')
+    domain_inventory = inventory.domains[config.default_domain]
+    click.echo(f'Signature-Suite: {domain_inventory.signature_suite}')
+    click.echo(f'Default-PKI-Protocol: {domain_inventory.pki_protocol.value}.')
     click.echo(f'\n\nPublic Key:\n\n{public_key}\n')
     click.echo(f'Certificate:\n\n{certificate}\n')
     click.echo(f'Certificate Chain:\n\n{certificate_chain}\n')
-    click.echo(f'Trust-Store for verifying the Trustpoint TLS-Server Certificate:\n\n{inventory.domains[config.default_domain].ldevid_trust_store}\n')
+    click.echo(
+        f'Trust-Store for verifying the Trustpoint TLS-Server Certificate:\n\n{domain_inventory.ldevid_trust_store}\n')
 
 @list_.command(name='credential')
 @click.argument('unique-name', type=str)
