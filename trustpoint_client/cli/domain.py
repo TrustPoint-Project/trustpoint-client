@@ -62,7 +62,6 @@ def domain_delete(domain_name: str) -> None:
             trustpoint_client.delete_domain(domain_name)
         except ValueError as exception:
             click.echo(f'\n{exception}\n')
-            print(traceback.format_exc())
             return
         click.echo(f'Successfully deleted domain {domain_name} and all corresponding credentials and data.')
         return
