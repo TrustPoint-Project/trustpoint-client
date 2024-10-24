@@ -111,14 +111,6 @@ Extension Options:
 ------------------
 
     """
-
-    unique_name_pattern = re.compile(r'^[a-zA-Z]+[a-zA-Z0-9_-]+$')
-    match = unique_name_pattern.match(unique_name)
-    if match is None:
-        click.echo()
-        raise click.ClickException(
-            'The unique name must start with a letter and '
-            'must only contain letters, digits, underscores and hyphens.\n')
     trustpoint_client = TrustpointClient()
 
     # no more default pki protocol
@@ -126,57 +118,13 @@ Extension Options:
         click.ClickException('No default domain is configured.')
 
     if trustpoint_client.inventory.domains[trustpoint_client.default_domain].pki_protocol == PkiProtocol.CMP:
-         _reg_cmp_cert(
-             trustpoint_client=trustpoint_client, subject=subject, extension=extension, unique_name=unique_name)
+        trustpoint_client.reg_cmp_cert(
+            domain_name=trustpoint_client.default_domain,
+            unique_name=unique_name,
+            subject=subject,
+            extension=extension
+        )
 
-def _reg_cmp_cert(
-        trustpoint_client: TrustpointClient, subject: list[str], extension: list[str], unique_name: str) -> None:
-
-    inventory_domain = trustpoint_client.inventory.domains[trustpoint_client.default_domain]
-    key_index = inventory_domain.ldevid_credential.key_index
-    cert_index = inventory_domain.ldevid_credential.active_certificate_index
-
-    key = trustpoint_client.devid_module.inventory.devid_keys[key_index].private_key
-    cert = trustpoint_client.devid_module.inventory.devid_certificates[cert_index].certificate
-
-    key_path = trustpoint_client.inventory_file_path.parent / 'key.pem'
-    cert_path = trustpoint_client.inventory_file_path.parent / 'cert.pem'
-
-    key_path.write_bytes(key)
-    cert_path.write_bytes(cert)
-
-    new_key_path = trustpoint_client.inventory_file_path.parent / 'new_key.pem'
-    new_cert_path = trustpoint_client.inventory_file_path.parent / 'new_cert.pem'
-
-    new_private_key = trustpoint_client.generate_new_key(inventory_domain.signature_suite)
-    new_key_path.write_bytes(
-        new_private_key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption()
-    ))
-
-    subject_cmp_str = f'/2.5.4.65=trustpoint-cert-{trustpoint_client.default_domain}-{unique_name}/2.5.4.65=my-pseudonym'
-    # for value in subject:
-
-
-    cmd = (
-        f'openssl cmp '
-        f'-cmd ir '
-        f'-server https://{trustpoint_client.trustpoint_ipv4}:{trustpoint_client.trustpoint_port} '
-        f'-path /.well-known/cmp/p/{trustpoint_client.default_domain}/initialization/ '
-        f'-newkey {new_key_path} '
-        f'-key {key_path} '
-        f'-cert {cert_path} '
-        f'-certout {new_cert_path} '
-        f'-implicit_confirm -disable_confirm '
-        f'-unprotected_errors '
-        f'-tls_used '
-        f'-subject {subject_cmp_str}'
-    )
-
-    result = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
-    print(result.decode())
 #
 # @req.command(name='tls-client-cert')
 # @click.option('--name', '-n', type=str, required=True, help='The name (handle) to identify the new certificate.')
