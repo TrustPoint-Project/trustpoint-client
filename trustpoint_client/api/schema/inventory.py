@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import enum
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, validator, field_validator
+
 
 class SignatureSuite(enum.Enum):
 

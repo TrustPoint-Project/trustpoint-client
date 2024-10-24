@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import uuid
 import subprocess
+import re
+
 import click
 from pathlib import Path
 
@@ -13,12 +15,32 @@ from trustpoint_client.api.schema import PkiProtocol
 BASE_PATH = Path('__file__').resolve().parent / 'trustpoint_client/demo_data'
 
 
+
+
+
 # TODO(AlexHx8472): This information should be part of MAN pages, not of the help directly.
 @click.group
 def req() -> None:
     """Request a new certificate or trust-store."""
 
-@req.command(name='generic-cert', help="""\b
+@req.command(name='generic-cert')
+@click.option(
+    '--subject', '-s',
+    type=str,
+    help='Subject Entry in the form <Abbreviation, name or OID>:<value>',
+    multiple=True,
+    default=[f'CN:Trustpoint Generic Certificate', f'serialNumber:{uuid.uuid4()}'])
+# @click.option(
+#     '--validity', '-v',
+#     type=str,
+#     required=True,
+#     help='Expects an ISO 8601 datetime string:"%Y-%m-%d".')
+@click.option('--extension', '-e', type=str, required=False)
+@click.argument('unique_name', type=str, required=True)
+def req_generic_cert(subject: list[str], extension: list[str], unique_name: str) -> None:
+    """Request Generic Certificate
+
+\b
 Subject Options:
 ----------------
 
@@ -48,6 +70,8 @@ Supported abbreviations, names and OIDs for the desired subject:
     - businessCategory : 2.5.4.16
     - postalCode : 2.5.4.17
     - unstructuredName : 1.2.840.113549.1.9.2
+    - unstructuredAddress : 1.2.840.113549.1.9.8
+
 \b
 All other attributes can be used by providing the OID directly.
 
@@ -58,7 +82,7 @@ Examples:
     --subject-entry commonName:MyApplicationTlsClientCertificate
     --subject-entry 2.5.4.3:MyApplicationTlsClientCertificate
 
-\b    
+\b
 Validity Options:
 -----------------
 
@@ -77,7 +101,7 @@ Examples:
     2 years, 2 months, 5 days, 4 hours, 3 minutes, 25 seconds
     --validity 2Y-2m-5dT4H:3M:25S
     --validity 2Y-2m-5d 4H:3M:25S
-    
+
 \b
     30 minutes
     0Y-0m-0dT
@@ -86,27 +110,27 @@ Examples:
 Extension Options:
 ------------------
 
-""")
-@click.option(
-    '--subject', '-s',
-    type=str,
-    help='Subject Entry in the form <Abbreviation, name or OID>:<value>',
-    multiple=True,
-    default=[f'CN:Trustpoint Generic Certificate', f'serialNumber:{uuid.uuid4()}'])
-# @click.option(
-#     '--validity', '-v',
-#     type=str,
-#     required=True,
-#     help='Expects an ISO 8601 datetime string:"%Y-%m-%d".')
-@click.option('--extension', '-e', type=str, required=False)
-def req_generic_cert(subject: list[str], extension: list[str]) -> None:
-    """Request a new generic certificate."""
-    trustpoint_client = TrustpointClient()
-    # no more default pki protocol
-    if trustpoint_client.config.default_pki_protocol == PkiProtocol.CMP:
-        _reg_cmp_cert(trustpoint_client=trustpoint_client, subject=subject, extension=extension)
+    """
 
-def _reg_cmp_cert(trustpoint_client: TrustpointClient, subject: list[str], extension: list[str]) -> None:
+    unique_name_pattern = re.compile(r'^[a-zA-Z]+[a-zA-Z0-9_-]+$')
+    match = unique_name_pattern.match(unique_name)
+    if match is None:
+        click.echo()
+        raise click.ClickException(
+            'The unique name must start with a letter and '
+            'must only contain letters, digits, underscores and hyphens.\n')
+    trustpoint_client = TrustpointClient()
+
+    # no more default pki protocol
+    if trustpoint_client.default_domain is None:
+        click.ClickException('No default domain is configured.')
+
+    if trustpoint_client.inventory.domains[trustpoint_client.default_domain].pki_protocol == PkiProtocol.CMP:
+         _reg_cmp_cert(
+             trustpoint_client=trustpoint_client, subject=subject, extension=extension, unique_name=unique_name)
+
+def _reg_cmp_cert(
+        trustpoint_client: TrustpointClient, subject: list[str], extension: list[str], unique_name: str) -> None:
 
     inventory_domain = trustpoint_client.inventory.domains[trustpoint_client.default_domain]
     key_index = inventory_domain.ldevid_credential.key_index
@@ -121,8 +145,8 @@ def _reg_cmp_cert(trustpoint_client: TrustpointClient, subject: list[str], exten
     key_path.write_bytes(key)
     cert_path.write_bytes(cert)
 
-    new_key_path = trustpoint_client.inventory_file_path.parent / 'new_key_path.pem'
-    new_cert_path = trustpoint_client.inventory_file_path.parent / 'new_cert_path.pem'
+    new_key_path = trustpoint_client.inventory_file_path.parent / 'new_key.pem'
+    new_cert_path = trustpoint_client.inventory_file_path.parent / 'new_cert.pem'
 
     new_private_key = trustpoint_client.generate_new_key(inventory_domain.signature_suite)
     new_key_path.write_bytes(
@@ -132,22 +156,27 @@ def _reg_cmp_cert(trustpoint_client: TrustpointClient, subject: list[str], exten
             encryption_algorithm=serialization.NoEncryption()
     ))
 
+    subject_cmp_str = f'/2.5.4.65=trustpoint-cert-{trustpoint_client.default_domain}-{unique_name}/2.5.4.65=my-pseudonym'
+    # for value in subject:
+
+
     cmd = (
         f'openssl cmp '
         f'-cmd ir '
-        f'-server {trustpoint_client.trustpoint_ipv4}:{trustpoint_client.trustpoint_port} '
+        f'-server https://{trustpoint_client.trustpoint_ipv4}:{trustpoint_client.trustpoint_port} '
         f'-path /.well-known/cmp/p/{trustpoint_client.default_domain}/initialization/ '
         f'-newkey {new_key_path} '
         f'-key {key_path} '
         f'-cert {cert_path} '
         f'-certout {new_cert_path} '
         f'-implicit_confirm -disable_confirm '
-        f'-unprotected_errors'
+        f'-unprotected_errors '
+        f'-tls_used '
+        f'-subject {subject_cmp_str}'
     )
 
     result = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
-    print(result)
-
+    print(result.decode())
 #
 # @req.command(name='tls-client-cert')
 # @click.option('--name', '-n', type=str, required=True, help='The name (handle) to identify the new certificate.')
