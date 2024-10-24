@@ -11,10 +11,11 @@ CLI_DIRECTORY = str(Path(__file__).resolve().parent)
 class TrustPointClientCli(click.MultiCommand):
 
     def list_commands(self, ctx: click.core.Context) -> list[str]:
-        return [
+        command_list =  [
             filename[:-3].replace('_', '-') for filename in os.listdir(CLI_DIRECTORY)
             if filename.endswith('.py') and filename not in ['__init__.py', 'decorator.py']
         ]
+        return sorted(command_list)
 
     @handle_cli_error
     def get_command(self, ctx: click.core.Context, name: str) -> dict:
