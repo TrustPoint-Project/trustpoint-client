@@ -1,9 +1,4 @@
-import traceback
-from inspect import trace
-from multiprocessing.managers import Value
-
 import click
-from trustpoint_devid_module.serializer import CertificateCollectionSerializer
 
 from trustpoint_client.cli import handle_cli_error
 from trustpoint_client.api import TrustpointClient

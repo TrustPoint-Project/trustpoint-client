@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 import subprocess
 import re
+import traceback
 
 import click
 from pathlib import Path
@@ -111,19 +112,23 @@ Extension Options:
 ------------------
 
     """
-    trustpoint_client = TrustpointClient()
+    try:
+        trustpoint_client = TrustpointClient()
 
-    # no more default pki protocol
-    if trustpoint_client.default_domain is None:
-        click.ClickException('No default domain is configured.')
+        # no more default pki protocol
+        if trustpoint_client.default_domain is None:
+            click.ClickException('No default domain is configured.')
 
-    if trustpoint_client.inventory.domains[trustpoint_client.default_domain].pki_protocol == PkiProtocol.CMP:
-        trustpoint_client.reg_cmp_cert(
-            domain_name=trustpoint_client.default_domain,
-            unique_name=unique_name,
-            subject=subject,
-            extension=extension
-        )
+        if trustpoint_client.inventory.domains[trustpoint_client.default_domain].pki_protocol == PkiProtocol.CMP:
+            trustpoint_client.reg_cmp_cert(
+                domain_name=trustpoint_client.default_domain,
+                unique_name=unique_name,
+                subject=subject,
+                extension=extension
+            )
+    except ValueError as exception:
+        print(traceback.format_exc())
+        raise click.ClickException(f'\n{exception}\n')
 
 #
 # @req.command(name='tls-client-cert')

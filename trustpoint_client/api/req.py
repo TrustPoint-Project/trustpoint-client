@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import re
-from logging import exception
-from pathlib import Path
 import subprocess
 from cryptography.hazmat.primitives import serialization
-
+from pathlib import Path
+from trustpoint_client.api.schema.inventory import Credential
 
 from trustpoint_client.api.base import TrustpointClientBaseClass
-
+from trustpoint_client.api.oid import NameOid
 
 class TrustpointClientReq(TrustpointClientBaseClass):
 
@@ -35,6 +34,25 @@ class TrustpointClientReq(TrustpointClientBaseClass):
             raise ValueError(
                 f'Credential already exists for the unique name {unique_name} in domain {domain_name} already exists.')
 
+        subject_entries = {}
+        for entry in subject:
+            attribute_type, attribute_value = entry.split(':', 1)
+            name_oid = NameOid.get_by_name(attribute_type)
+            if name_oid is None:
+                pattern = re.compile(r'^([0-2])((\.0)|(\.[1-9][0-9]*))*$')
+                match = pattern.match(attribute_type)
+                if match is None:
+                    raise ValueError(f'Found an invalid subject attribute type: {attribute_type}.')
+                oid = attribute_type
+            else:
+                oid = name_oid.dotted_string
+            subject_entries[oid] = attribute_value
+
+        # The serial number is not included by default, due to possible privacy concerns
+        subject_cmp_str = f'/2.5.4.65=trustpoint.generic-cert.{self.default_domain}.{unique_name}'
+        for key, value in subject_entries.items():
+            subject_cmp_str += f'/{key}={value}'
+
         key_index = inventory_domain.ldevid_credential.key_index
         cert_index = inventory_domain.ldevid_credential.active_certificate_index
 
@@ -59,7 +77,7 @@ class TrustpointClientReq(TrustpointClientBaseClass):
                 encryption_algorithm=serialization.NoEncryption()
         ))
 
-        subject_cmp_str = f'/2.5.4.65=trustpoint.generic-cert.{self.default_domain}.{unique_name}'
+
 
         cmd = (
             f'openssl cmp '
@@ -80,6 +98,7 @@ class TrustpointClientReq(TrustpointClientBaseClass):
         # TODO(AlexHx8472): Log result
         try:
             result = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+            print(result)
         except subprocess.CalledProcessError as exception_:
             raise ValueError(f'CMP request failed: {exception_}')
 
@@ -95,5 +114,11 @@ class TrustpointClientReq(TrustpointClientBaseClass):
 
         self.devid_module.insert_ldevid_certificate_chain(new_cert_index, enrolled_cert_chain)
 
+        new_credential = Credential(
+            active_certificate_index=new_cert_index,
+            key_index=new_key_index,
+            certificate_indices=[]
+        )
 
-
+        inventory_domain.credentials[unique_name] = new_credential
+        self._store_inventory(inventory)

@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from trustpoint_client.api import TrustpointConfigModel
 
 if TYPE_CHECKING:
+    from trustpoint_client.api import TrustpointConfigModel
     from trustpoint_devid_module.service_interface import DevIdModule
     from trustpoint_client.api.schema import Inventory
     from pathlib import Path
