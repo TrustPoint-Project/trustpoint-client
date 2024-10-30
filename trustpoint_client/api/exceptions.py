@@ -96,3 +96,14 @@ class ProvisioningError(TrustpointClientError):
     def __init__(self, message: str) -> None:
         """Initializes the ProvisioningError."""
         super().__init__(message)
+
+
+class DomainDoesNotExist(TrustpointClientError):
+    """Raised if the domain already exists."""
+
+    def __init__(self, domain: None | str) -> None:
+        """Initializes the DomainDoesNotExist."""
+        if domain is None:
+            super().__init__('Domain already exists.')
+        else:
+            super().__init__(f'Domain {domain} does not exist.')

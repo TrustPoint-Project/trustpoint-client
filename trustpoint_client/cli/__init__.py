@@ -3,10 +3,21 @@ from pathlib import Path
 
 import click
 
-from trustpoint_client.cli.decorator import handle_cli_error
 from trustpoint_client.cli.version import version_id
 
 CLI_DIRECTORY = str(Path(__file__).resolve().parent)
+
+domain_option_required = click.option(
+    '--domain', '-d',
+    type=str,
+    required=True,
+    help='Handle of the desired domain.')
+domain_option_optional = click.option(
+    '--domain', '-d',
+    type=str,
+    required=False,
+    help='Handle of the desired domain.')
+verbose_option = click.option('--verbose', '-v', is_flag=True, required=False, default=False, help='Enable verbose mode.')
 
 class TrustPointClientCli(click.MultiCommand):
 
@@ -17,7 +28,6 @@ class TrustPointClientCli(click.MultiCommand):
         ]
         return sorted(command_list)
 
-    @handle_cli_error
     def get_command(self, ctx: click.core.Context, name: str) -> dict:
         ns = {}
         if name not in self.list_commands(ctx):
