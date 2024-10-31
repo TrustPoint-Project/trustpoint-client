@@ -3,8 +3,6 @@ import click
 
 from trustpoint_client.cli import domain_option_optional, verbose_option
 from trustpoint_client.api import TrustpointClient
-from trustpoint_client.api.schema import PkiProtocol
-
 import prettytable
 from pathlib import Path
 import uuid
@@ -18,11 +16,7 @@ def credentials():
     """Commands concerning domains."""
 
 
-@credentials.command(name='list')
-@domain_option_optional
-@verbose_option
-@click.argument('unique-name', type=str, required=False)
-def credential_list(domain: None | str, verbose: bool, unique_name: None | str) -> None:
+def _credential_list(domain: None | str, verbose: bool, unique_name: None | str) -> None:
     trustpoint_client = TrustpointClient()
     if domain is None:
         domain = trustpoint_client.default_domain
@@ -65,6 +59,14 @@ def credential_list(domain: None | str, verbose: bool, unique_name: None | str) 
             click.echo(f'\nCredential Certificate-Chain: {unique_name}')
             click.echo(64 * '-' + '\n')
             click.echo(cert)
+
+
+@credentials.command(name='list')
+@domain_option_optional
+@verbose_option
+@click.argument('unique-name', type=str, required=False)
+def credential_list(domain: None | str, verbose: bool, unique_name: None | str) -> None:
+    _credential_list(domain, verbose, unique_name)
 
 
 @credentials.command(name='delete')
@@ -242,8 +244,8 @@ All other attributes can be used by providing the OID directly.
 Examples:
 
 \b
-    --subject-entry commonName:MyApplicationTlsClientCertificate
-    --subject-entry 2.5.4.3:MyApplicationTlsClientCertificate
+    --subject commonName:MyApplicationTlsClientCertificate
+    --subject 2.5.4.3:MyApplicationTlsClientCertificate
 
 \b
 Validity Options:
@@ -289,6 +291,8 @@ Extension Options:
 
     except ValueError as exception:
         raise click.ClickException(f'\n{exception}\n')
+
+    _credential_list(domain=None, verbose=False, unique_name=unique_name)
 
 #
 # @req.command(name='tls-client-cert')

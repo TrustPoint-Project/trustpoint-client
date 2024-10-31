@@ -80,6 +80,9 @@ class TrustpointClientProvision:
             'LDevID Expires-In': provision_data['ldevid-expires-in']
         }
 
+        if result['Host'] == 'localhost':
+            result['Host'] = '127.0.0.1'
+
         return result
 
     def _provision_get_trust_store(self, provision_data: dict[str, Any]) -> None:
