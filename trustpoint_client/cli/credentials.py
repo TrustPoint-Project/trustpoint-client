@@ -1,5 +1,7 @@
 from __future__ import annotations
 import click
+import re
+import datetime
 
 from trustpoint_client.enums import (
     CertificateFormat,
@@ -268,14 +270,26 @@ def request() -> None:
     help='Subject Entry in the form <Abbreviation, name or OID>:<value>',
     multiple=True,
     default=[f'CN:Trustpoint Generic Certificate', f'serialNumber:{uuid.uuid4()}'])
-# @click.option(
-#     '--validity', '-v',
-#     type=str,
-#     required=True,
-#     help='Expects an ISO 8601 datetime string:"%Y-%m-%d".')
+@click.option(
+    '--validity-years', '-vy',
+    type=int,
+    required=False,
+    default=0,
+    help='Desired validity in years. Days will be added.')
+@click.option(
+    '--validity-days', '-vd',
+    type=int,
+    required=False,
+    default=365,
+    help='Desired validity in days. Will be added to years, if provided.')
 @click.option('--extension', '-e', type=str, required=False)
 @click.argument('unique_name', type=str, required=True)
-def request_generic(subject: list[str], extension: list[str], unique_name: str) -> None:
+def request_generic(
+        subject: list[str],
+        validity_years: int,
+        validity_days: int,
+        extension: list[str],
+        unique_name: str) -> None:
     """Request Generic Certificate
 
 \b
@@ -325,24 +339,18 @@ Validity Options:
 -----------------
 
 \b
-The validity must be provided as an ISO 8601 datetime string:
-%Y-%m-%d","%Y-%m-%dT%H:%M:%S" or "%Y-%m-%d %H:%M:%S"
-
-\b
 Examples:
 
 \b
-    2 years, 2 months, 5 days
-    --validity 2Y-2m-5d
+    2 years
+    --validity-years 2
+    -vy 2
 
 \b
-    2 years, 2 months, 5 days, 4 hours, 3 minutes, 25 seconds
-    --validity 2Y-2m-5dT4H:3M:25S
-    --validity 2Y-2m-5d 4H:3M:25S
-
-\b
-    30 minutes
-    0Y-0m-0dT
+    1 years and 35 days (400 days)
+    --validity-years 2 --validity-days 35
+    -vy 1 -vd 35
+    --validity-days 400
 
 \b
 Extension Options:
@@ -356,10 +364,13 @@ Extension Options:
         if trustpoint_client.default_domain is None:
             click.ClickException('No default domain is configured.')
 
+        validity_days = validity_years * 365 + validity_days
+
         trustpoint_client.request_generic(
             domain=None,
             unique_name=unique_name,
-            subject=subject
+            subject=subject,
+            validity_days=validity_days
         )
 
     except ValueError as exception:

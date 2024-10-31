@@ -315,7 +315,12 @@ class TrustpointClientCredential:
         else:
             raise ValueError(f'Private key format {private_key_format.value} is not supported.')
 
-    def request_generic(self, domain: None | str, unique_name: str, subject: list[str]) -> None:
+    def request_generic(
+            self,
+            domain: None | str,
+            unique_name: str,
+            subject: list[str],
+            validity_days: int = 365) -> None:
         if domain is None:
             domain = self.default_domain
         if not self.domain_exists(domain):
@@ -332,9 +337,9 @@ class TrustpointClientCredential:
                 'must only contain letters, digits, underscores and hyphens.\n')
 
         if self.inventory.domains[domain].domain_config.pki_protocol == PkiProtocol.CMP:
-            return self._request_generic_via_cmp(domain, unique_name, subject)
+            return self._request_generic_via_cmp(domain, unique_name, subject, validity_days)
 
-    def _request_generic_via_cmp(self, domain: str, unique_name: str, subject: list[str]) -> None:
+    def _request_generic_via_cmp(self, domain: str, unique_name: str, subject: list[str], validity_days: int) -> None:
         inventory = self.inventory
         inventory_domain = inventory.domains[domain]
 
@@ -397,7 +402,8 @@ class TrustpointClientCredential:
             f'-implicit_confirm -disable_confirm '
             f'-unprotected_errors '
             f'-tls_used '
-            f'-subject {subject_cmp_str}'
+            f'-subject {subject_cmp_str} '
+            f'-days {validity_days}'
         )
 
         try:
