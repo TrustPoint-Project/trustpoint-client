@@ -4,8 +4,21 @@ import re
 import secrets
 
 from typing import TYPE_CHECKING
+
+from trustpoint_devid_module.serializer import (
+    CertificateSerializer,
+    CertificateCollectionSerializer,
+    PublicKeySerializer,
+    PrivateKeySerializer,
+    CredentialSerializer
+)
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.serialization import pkcs12
+from trustpoint_client.enums import (
+    CertificateFormat,
+    CertificateCollectionFormat,
+    PublicKeyFormat,
+    PrivateKeyFormat
+)
 
 from pathlib import Path
 
@@ -172,39 +185,135 @@ class TrustpointClientCredential:
         cert = self.devid_module.inventory.devid_certificates[
             credential.certificate_index
         ].certificate
-        loaded_cert = x509.load_pem_x509_certificate(cert)
 
         priv_key = self.devid_module.inventory.devid_keys[
             credential.key_index
         ].private_key
-        loaded_priv_key = serialization.load_pem_private_key(priv_key, password=None)
 
         cert_chain = self.devid_module.inventory.devid_certificates[
             credential.certificate_index
         ].certificate_chain
-        loaded_cert_chain = x509.load_pem_x509_certificates(b''.join([cert for cert in cert_chain]))
 
-        pkcs12_bytes = pkcs12.serialize_key_and_certificates(
-            name=b'',
-            key=loaded_priv_key,
-            cert=loaded_cert,
-            cas=loaded_cert_chain,
-            encryption_algorithm=serialization.BestAvailableEncryption(password)
-        )
+        credential_serializer = CredentialSerializer(credential=(priv_key, cert, cert_chain))
+
+        pkcs12_bytes = credential_serializer.as_pkcs12(password=password, friendly_name=b'')
 
         return pkcs12_bytes, password
 
+    def export_certificate(self, domain: None | str, unique_name: str, cert_format: CertificateFormat) -> bytes:
+        if domain is None:
+            domain = self.default_domain
+        if not self.credential_exists(domain, unique_name):
+            raise ValueError(f'Credential {unique_name} does not exist for domain {domain}.')
 
-    # def export_credential_as_pem(
-    #         self,
-    #         domain: None | str,
-    #         domain_credential: bool,
-    #         unique_name: None | str,
-    #         password: bytes,
-    #         certificate_file_path: Path,
-    #         private_key_file_path: Path,
-    #         certificate_chain_file_path: Path) -> bytes:
-    #     pass
+        credential = self.inventory.domains[domain].credentials[unique_name]
+
+        cert = self.devid_module.inventory.devid_certificates[
+            credential.certificate_index
+        ].certificate
+
+        certificate_serializer = CertificateSerializer(cert)
+
+        if cert_format == CertificateFormat.PEM:
+            return certificate_serializer.as_pem()
+        elif cert_format == CertificateFormat.DER:
+            return certificate_serializer.as_pem()
+        elif cert_format == CertificateFormat.PKCS7_PEM:
+            return certificate_serializer.as_pkcs7_pem()
+        elif cert_format == CertificateFormat.PKCS7_DER:
+            return certificate_serializer.as_pkcs7_der()
+        else:
+            raise ValueError(f'Certificate format {cert_format.value} is not supported.')
+
+    def export_certificate_chain(
+            self,
+            domain: None | str,
+            unique_name: str,
+            cert_chain_format: CertificateCollectionFormat) -> bytes:
+
+        if domain is None:
+            domain = self.default_domain
+        if not self.credential_exists(domain, unique_name):
+            raise ValueError(f'Credential {unique_name} does not exist for domain {domain}.')
+
+        credential = self.inventory.domains[domain].credentials[unique_name]
+
+        cert = self.devid_module.inventory.devid_certificates[
+            credential.certificate_index
+        ].certificate_chain
+
+        certificate_collection_serializer = CertificateCollectionSerializer(cert)
+
+        if cert_chain_format == CertificateCollectionFormat.PEM:
+            return certificate_collection_serializer.as_pem()
+        elif cert_chain_format == CertificateCollectionFormat.PKCS7_PEM:
+            return certificate_collection_serializer.as_pkcs7_pem()
+        elif cert_chain_format == CertificateCollectionFormat.PKCS7_DER:
+            return certificate_collection_serializer.as_pkcs7_der()
+        else:
+            raise ValueError(f'Certificate chain format {cert_chain_format.value} is not supported.')
+
+    def export_public_key(
+            self,
+            domain: None | str,
+            unique_name: str,
+            public_key_format: PublicKeyFormat) -> bytes:
+
+        if domain is None:
+            domain = self.default_domain
+        if not self.credential_exists(domain, unique_name):
+            raise ValueError(f'Credential {unique_name} does not exist for domain {domain}.')
+
+        credential = self.inventory.domains[domain].credentials[unique_name]
+
+        pub_key = self.devid_module.inventory.devid_keys[
+            credential.key_index
+        ].public_key
+
+        public_key_serializer = PublicKeySerializer(pub_key)
+
+        if public_key_format == PublicKeyFormat.PEM:
+            return public_key_serializer.as_pem()
+        elif public_key_format == PublicKeyFormat.DER:
+            return public_key_serializer.as_der()
+        else:
+            raise ValueError(f'Public key format {public_key_format.value} is not supported.')
+
+    def export_private_key(
+            self,
+            domain: None | str,
+            unique_name: str,
+            password: None | bytes,
+            private_key_format: PrivateKeyFormat) -> (bytes, bytes):
+
+        if domain is None:
+            domain = self.default_domain
+        if not self.credential_exists(domain, unique_name):
+            raise ValueError(f'Credential {unique_name} does not exist for domain {domain}.')
+
+        if password is None:
+            password = secrets.token_urlsafe(12)
+        if len(password) < 12:
+            raise ValueError('Password must be at least 8 characters.')
+        password = password.encode()
+
+        credential = self.inventory.domains[domain].credentials[unique_name]
+
+        priv_key = self.devid_module.inventory.devid_keys[
+            credential.key_index
+        ].private_key
+
+        private_key_serializer = PrivateKeySerializer(priv_key)
+        if private_key_format == PrivateKeyFormat.PKCS1_PEM:
+            return private_key_serializer.as_pkcs1_pem(password=password), password
+        elif private_key_format == PrivateKeyFormat.PKCS8_PEM:
+            return private_key_serializer.as_pkcs8_pem(password=password), password
+        elif private_key_format == PrivateKeyFormat.PKCS8_DER:
+            return private_key_serializer.as_pkcs8_der(password=password), password
+        elif private_key_format == PrivateKeyFormat.PKCS12:
+            return private_key_serializer.as_pkcs12(password=password, friendly_name=b''), password
+        else:
+            raise ValueError(f'Private key format {private_key_format.value} is not supported.')
 
     def request_generic(self, domain: None | str, unique_name: str, subject: list[str]) -> None:
         if domain is None:

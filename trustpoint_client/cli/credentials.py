@@ -1,6 +1,12 @@
 from __future__ import annotations
 import click
 
+from trustpoint_client.enums import (
+    CertificateFormat,
+    CertificateCollectionFormat,
+    PublicKeyFormat,
+    PrivateKeyFormat
+)
 from trustpoint_client.cli import domain_option_optional, verbose_option
 from trustpoint_client.api import TrustpointClient
 import prettytable
@@ -8,7 +14,6 @@ from pathlib import Path
 import uuid
 
 BASE_PATH = Path('__file__').resolve().parent / 'trustpoint_client/demo_data'
-from trustpoint_devid_module.serializer import CertificateCollectionSerializer
 
 
 @click.group(name='credential')
@@ -124,6 +129,8 @@ def export_credential(domain: None | str, password: None | str, unique_name: str
         password = password.encode()
     pkcs12_bytes, pkcs12_password = trustpoint_client.export_credential_as_pkcs12(domain, unique_name, password)
 
+    if not pkcs12_out.endswith('.p12'):
+        pkcs12_out += '.p12'
     pkcs12_path = Path(pkcs12_out)
     pkcs12_path.write_bytes(pkcs12_bytes)
 
@@ -135,24 +142,73 @@ def export_credential(domain: None | str, password: None | str, unique_name: str
 
 @export.command(name='certificate')
 @domain_option_optional
-@click.option(
-    '--password', '-pw',
-    type=str,
-    required=False,
-    default=None,
-    help='The password used to encrypt the file.')
 @click.option('--unique-name', '-u', type=str, required=True)
-@click.option('--format', '-f', type=str, required=False)
+@click.option(
+    '--format-out', '-f',
+    type=click.Choice([format_.value for format_ in CertificateFormat]),
+    required=False,
+    default=CertificateFormat.PEM.value)
 @click.option('--certificate-out', '-o', type=click.Path(), required=True)
-def export_certificate():
+def export_certificate(domain: None | str, unique_name: str, format_out: str, certificate_out: str) -> None:
     """Exports the credential certificate."""
+    trustpoint_client = TrustpointClient()
+    cert_format = CertificateFormat(format_out)
+    cert_bytes = trustpoint_client.export_certificate(domain, unique_name, cert_format)
+
+    if not certificate_out.endswith(cert_format.file_extension):
+        certificate_out += cert_format.file_extension
+    cert_path = Path(certificate_out)
+    cert_path.write_bytes(cert_bytes)
+
+    click.echo(f'\nCertificate file saved (Format: {format_out}): {cert_path.resolve()}\n')
+
+
+@export.command(name='certificate-chain')
+@domain_option_optional
+@click.option('--unique-name', '-u', type=str, required=True)
+@click.option(
+    '--format-out', '-f',
+    type=click.Choice([format_.value for format_ in CertificateCollectionFormat]),
+    required=False,
+    default=CertificateCollectionFormat.PEM.value)
+@click.option('--certificate-chain-out', '-o', type=click.Path(), required=True)
+def export_certificate_chain(domain: None | str, unique_name: str, format_out: str, certificate_chain_out: str):
+    """Exports the credential certificate-chain."""
+    trustpoint_client = TrustpointClient()
+    cert_chain_format = CertificateCollectionFormat(format_out)
+    cert_chain_bytes = trustpoint_client.export_certificate_chain(
+        domain, unique_name, cert_chain_format)
+
+    if not certificate_chain_out.endswith(cert_chain_format.file_extension):
+        certificate_chain_out += cert_chain_format.file_extension
+    cert_chain_path = Path(certificate_chain_out)
+    cert_chain_path.write_bytes(cert_chain_bytes)
+
+    click.echo(f'\nCertificate chain file saved (Format: {format_out}): {cert_chain_path.resolve()}\n')
+
 
 @export.command(name='public-key')
 @domain_option_optional
 @click.option('--unique-name', '-u', type=str, required=True)
+@click.option(
+    '--format-out', '-f',
+    type=click.Choice([format_.value for format_ in PublicKeyFormat]),
+    required=False,
+    default=PublicKeyFormat.PEM.value)
 @click.option('--public-key-out', '-o', type=click.Path(), required=True)
-def export_public_key():
+def export_public_key(domain: None | str, unique_name: str, format_out: str, public_key_out: str):
     """Exports the credential public-key."""
+    trustpoint_client = TrustpointClient()
+    public_key_format = PublicKeyFormat(format_out)
+    public_key_bytes = trustpoint_client.export_public_key(domain, unique_name, public_key_format)
+
+    if not public_key_out.endswith(public_key_format.file_extension):
+        public_key_out += public_key_format.file_extension
+    pub_key_path = Path(public_key_out)
+    pub_key_path.write_bytes(public_key_bytes)
+
+    click.echo(f'\nPublic key file saved (Format: {format_out}): {pub_key_path.resolve()}\n')
+
 
 @export.command(name='private-key')
 @domain_option_optional
@@ -163,16 +219,33 @@ def export_public_key():
     default=None,
     help='The password used to encrypt the file.')
 @click.option('--unique-name', '-u', type=str, required=True)
+@click.option(
+    '--format-out', '-f',
+    type=click.Choice([format_.value for format_ in PrivateKeyFormat]),
+    required=False,
+    default=PrivateKeyFormat.PKCS8_PEM.value)
 @click.option('--private-key-out', '-o', type=click.Path(), required=True)
-def export_private_key():
+def export_private_key(
+        domain: None | str, password: None | str, unique_name: str, format_out: str, private_key_out: str):
     """Exports the credential private-key."""
+    trustpoint_client = TrustpointClient()
+    if isinstance(password, str):
+        password = password.encode()
+    private_key_format = PrivateKeyFormat(format_out)
+    private_key_bytes, private_key_password = trustpoint_client.export_private_key(
+        domain, unique_name, password, private_key_format
+    )
 
-@export.command(name='certificate-chain')
-@domain_option_optional
-@click.option('--unique-name', '-u', type=str, required=True)
-@click.option('--certificate-chain-out', '-o', type=click.Path(), required=True)
-def export_certificate_chain():
-    """Exports the credential certificate-chain."""
+    if not private_key_out.endswith(private_key_format.file_extension):
+        private_key_out += private_key_format.file_extension
+    private_key_path = Path(private_key_out)
+    private_key_path.write_bytes(private_key_bytes)
+
+    click.echo(f'\nPrivate key file saved (Format: {format_out}): {private_key_path.resolve()}\n')
+
+    if password != private_key_password:
+        click.echo(f'Private key file encrypted with password {private_key_password.decode()}.\n')
+
 
 @credentials.command
 def renew():
