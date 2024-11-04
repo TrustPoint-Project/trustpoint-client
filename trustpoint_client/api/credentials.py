@@ -1,7 +1,11 @@
 from __future__ import annotations
+
+import abc
 import subprocess
+import enum
 import re
 import secrets
+from multiprocessing.managers import Value
 
 from typing import TYPE_CHECKING
 
@@ -32,6 +36,132 @@ if TYPE_CHECKING:
     from trustpoint_client.api.schema import InventoryModel
     from trustpoint_devid_module.service_interface import DevIdModule
 
+
+class CertificateExtension(abc.ABC):
+
+    _extension_config: str
+    _default_extension_config: str
+    _openssl_config: str
+
+    def __init__(self, extension_config: None | str) -> None:
+        if extension_config is None:
+            self._extension_config = self._default_extension_config
+        else:
+            self._extension_config = extension_config
+        self._parse_extension_config()
+
+    @abc.abstractmethod
+    def _parse_extension_config(self) -> None:
+        pass
+
+    @property
+    def extension_config(self) -> str:
+        return self._extension_config
+
+    @property
+    def openssl_config(self) -> str:
+        return self._openssl_config
+
+    @classmethod
+    def _get_criticality_str(cls, critical: str) -> str:
+        critical = critical.lower()
+        if critical == 'c' or critical == 'critical':
+            return 'critical,'
+        elif critical == 'n' or critical == 'non-critical':
+            return ''
+        else:
+            raise ValueError(f'{cls.__class__.__name__}: Failed to determine criticality of extension.')
+
+
+class BasicConstraintsExtension(CertificateExtension):
+
+    _default_extension_config = 'critical'
+
+    def __init__(self, extension_config: None | str) -> None:
+        super().__init__(extension_config)
+
+    def _parse_extension_config(self) -> None:
+        critical = self._get_criticality_str(self.extension_config)
+
+        # pathlen is not set on purpose, since it is not recommended for EE certs.
+        self._openssl_config = f'basicConstraints={critical}CA:FALSE'
+
+class KeyUsageExtension(CertificateExtension):
+
+    class KeyUsageOption(enum.Enum):
+
+        DIGITAL_SIGNATURE = ('digitalsignature', 'digitalSignature')
+        NON_REPUDIATION = ('nonrepudiation', 'nonRepudiation')
+        KEY_ENCIPHERMENT = ('keyencipherment', 'keyEncipherment')
+        DATA_ENCIPHERMENT = ('dataencipherment', 'dataEncipherment')
+        KEY_AGREEMENT = ('keyagreement', 'keyAgreement')
+        KEY_CERT_SIGN = ('keycertsign', 'keyCertSign')
+        CRL_SIGN = ('crlsign', 'cRLSign')
+        ENCIPHER_ONLY = ('encipheronly', 'encipherOnly')
+        DECIPHER_ONLY = ('decipheronly', 'decipherOnly')
+
+        def __new__(cls, value, pretty_value):
+            obj = object.__new__(cls)
+            obj._value_ = value
+            obj.pretty_value = pretty_value
+            return obj
+
+    _default_extension_config = (
+        'critical:'
+        'digitalSignature=false:'
+        'nonRepudiation=false:'
+        'keyEncipherment=false:'
+        'dataEncipherment=false:'
+        'keyAgreement=false:'
+        'keyCertSign=false:'
+        'cRLSign=false:'
+        'encipherOnly=false:'
+        'decipherOnly=false'
+    )
+
+    def __init__(self, extension_config: None | str) -> None:
+        super().__init__(extension_config)
+        print(self._default_extension_config)
+
+    def _parse_extension_config(self) -> None:
+        print(self.extension_config)
+        split_ext_config = self.extension_config.split(':')
+        critical = self._get_criticality_str(split_ext_config.pop(0))
+
+        # for entry in split_ext_config:
+        #     split_entry = entry.split('=')
+        #     if len(split_entry) != 2:
+        #         raise ValueError(f'{self.__class__.__name__}: Failed to parse extension option.')
+        #     try:
+        #         self.KeyUsageOption(split_entry[0])
+        #     except ValueError:
+        #         raise ValueError(f'{self.__class__.__name__}: Failed to parse extension option.')
+        #     if
+        # print(critical)
+
+        print(split_ext_config)
+        # print(split_ext_config)
+        # if not 2 <= len(split_ext_config) <= 10:
+        #     raise ValueError('Failed to parse key usage extension config string.')
+        # if len(split_ext_config) == 2:
+        #     if self._is_valid_octet(split_ext_config[1]):
+        #         return
+
+
+
+
+        self._openssl_config = ''
+
+    @staticmethod
+    def _is_valid_octet(value) -> bool:
+        if len(value) != 8:
+            return False
+        try:
+            int(value, base=2)
+        except ValueError:
+            return False
+
+        return True
 class TrustpointClientCredential:
 
     inventory: InventoryModel
@@ -320,6 +450,7 @@ class TrustpointClientCredential:
             domain: None | str,
             unique_name: str,
             subject: list[str],
+            extensions: list[CertificateExtension],
             validity_days: int = 365) -> None:
         if domain is None:
             domain = self.default_domain
@@ -337,9 +468,21 @@ class TrustpointClientCredential:
                 'must only contain letters, digits, underscores and hyphens.\n')
 
         if self.inventory.domains[domain].domain_config.pki_protocol == PkiProtocol.CMP:
-            return self._request_generic_via_cmp(domain, unique_name, subject, validity_days)
+            return self._request_generic_via_cmp(
+                domain=domain,
+                unique_name=unique_name,
+                subject=subject,
+                extensions=extensions,
+                validity_days=validity_days)
 
-    def _request_generic_via_cmp(self, domain: str, unique_name: str, subject: list[str], validity_days: int) -> None:
+    def _request_generic_via_cmp(
+            self,
+            domain: str,
+            unique_name: str,
+            subject: list[str],
+            extensions: list[CertificateExtension],
+            validity_days: int
+            ) -> None:
         inventory = self.inventory
         inventory_domain = inventory.domains[domain]
 
@@ -378,6 +521,19 @@ class TrustpointClientCredential:
         new_cert_path = self.inventory_file_path.parent / 'new_cert.pem'
         new_cert_chain_path = self.inventory_file_path.parent / 'new_cert_chain.pem'
 
+        if extensions:
+            openssl_cmp_config_path = self.inventory_file_path.parent / 'cmp.cnf'
+            content = '[cmp]\n'
+            for extension in extensions:
+                content += extension.openssl_config + '\n'
+            content += '\n'
+            print(content)
+            openssl_cmp_config_path.write_text(content)
+
+            cmp_ext_cmd_option = f'-config {openssl_cmp_config_path.resolve()} -reqexts cmp '
+        else:
+            cmp_ext_cmd_option = '-config "" '
+
         new_private_key = self.generate_new_key(inventory_domain.domain_config.signature_suite)
         new_key_path.write_bytes(
             new_private_key.private_bytes(
@@ -403,8 +559,11 @@ class TrustpointClientCredential:
             f'-unprotected_errors '
             f'-tls_used '
             f'-subject {subject_cmp_str} '
-            f'-days {validity_days}'
+            f'-days {validity_days} '
+            f'{cmp_ext_cmd_option}'
         )
+
+        print(cmd)
 
         try:
             subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
