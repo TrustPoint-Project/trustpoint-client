@@ -91,7 +91,7 @@ class KeyUsageExtension(CertificateExtension):
     class KeyUsageOption(enum.Enum):
 
         DIGITAL_SIGNATURE = ('digitalsignature', 'digitalSignature')
-        NON_REPUDIATION = ('nonrepudiation', 'nonRepudiation')
+        CONTENT_COMMITMENT = ('contentcommitment', 'contentCommitment')
         KEY_ENCIPHERMENT = ('keyencipherment', 'keyEncipherment')
         DATA_ENCIPHERMENT = ('dataencipherment', 'dataEncipherment')
         KEY_AGREEMENT = ('keyagreement', 'keyAgreement')
@@ -109,7 +109,7 @@ class KeyUsageExtension(CertificateExtension):
     _default_extension_config = (
         'critical:'
         'digitalSignature=false:'
-        'nonRepudiation=false:'
+        'contentCommitment=false:'
         'keyEncipherment=false:'
         'dataEncipherment=false:'
         'keyAgreement=false:'
@@ -135,7 +135,7 @@ class KeyUsageExtension(CertificateExtension):
                     if split_ext_config[0][0] == '1':
                         options += self.KeyUsageOption.DIGITAL_SIGNATURE.pretty_value + ', '
                     if split_ext_config[0][1] == '1':
-                        options += self.KeyUsageOption.NON_REPUDIATION.pretty_value+ ', '
+                        options += self.KeyUsageOption.CONTENT_COMMITMENT.pretty_value+ ', '
                     if split_ext_config[0][2] == '1':
                         options += self.KeyUsageOption.KEY_ENCIPHERMENT.pretty_value+ ', '
                     if split_ext_config[0][3] == '1':

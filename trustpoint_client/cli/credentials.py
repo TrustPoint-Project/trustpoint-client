@@ -390,9 +390,10 @@ X.509 Extension Options:
 \b
     The following options can be set, while every options defaults to false.
     At least one flag must be set to true (or 1).
+    If encipherOnly or decipherOnly is set, keyAgreement must also be set.
 \b
     digitalSignature
-    nonRepudiation
+    contentCommitment
     keyEncipherment
     dataEncipherment
     keyAgreement
