@@ -354,8 +354,73 @@ Examples:
     --validity-days 400
 
 \b
-Extension Options:
-------------------
+X.509 Extension Options:
+------------------------
+
+\b
+    Defaults to not including any extension that is not explicitly given.
+
+\b
+    Basic Constraints
+    -----------------
+    --basic-constraints, -bc
+
+\b
+        The cA flag will always be false and the path length constraint will not be set, since we do not allow
+        the issuance of CA certificates. Basic constraints can be set to either critical or non-critical.
+
+\b
+        critical:
+        --basic-constraints critical
+        --basic-constraints c
+        -bc critical
+        -bc c
+\b
+        non-critical:
+        --basic-constraints non-critical
+        --basic-constraints n
+        -bc non-critical
+        -bc n
+
+\b
+    Key Usage
+    ---------
+    --key-usage, -ku
+
+\b
+    The following options can be set, while every options defaults to false.
+    At least one flag must be set to true (or 1).
+\b
+    digitalSignature
+    nonRepudiation
+    keyEncipherment
+    dataEncipherment
+    keyAgreement
+    keyCertSign
+    cRLSign
+    encipherOnly
+    decipherOnly
+\b
+    Criticality can be set using 'critical' ('c'), or 'non-critical' ('n'). Compare the examples section.
+
+\b
+        Examples:
+        ---------
+\b
+            Setting the Key Usage extension to critical and digitalSignature and keyEncipherment to true,
+            everything else shall be false. The following options are equivalent.
+            --key-usage critical:digitalSignature=true:keyEncipherment=true:cRLSign=false:encipherOnly=false
+            --key-usage critical:digitalSignature=true:keyEncipherment=true
+            -ku c:digitalSignature=true:keyEncipherment=true
+            -ku c:101000000
+\b
+            The last example shows the shorthand using 9 bits. 0 and 1 correspond to false and true, respectively.
+            The order corresponds to the list of options above. The first bit corresponds to digitalSignature and
+            the last bit corresponds to decipherOnly.
+\b
+            To set the same extension, but as non-critical we can use:
+            -ku non-critical:101000000
+            -ku n:101000000
 
     """
     try:

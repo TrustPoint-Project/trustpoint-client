@@ -5,7 +5,7 @@ import subprocess
 import enum
 import re
 import secrets
-from multiprocessing.managers import Value
+import traceback
 
 from typing import TYPE_CHECKING
 
@@ -41,7 +41,7 @@ class CertificateExtension(abc.ABC):
 
     _extension_config: str
     _default_extension_config: str
-    _openssl_config: str
+    _openssl_config: None | str = None
 
     def __init__(self, extension_config: None | str) -> None:
         if extension_config is None:
@@ -66,7 +66,7 @@ class CertificateExtension(abc.ABC):
     def _get_criticality_str(cls, critical: str) -> str:
         critical = critical.lower()
         if critical == 'c' or critical == 'critical':
-            return 'critical,'
+            return 'critical, '
         elif critical == 'n' or critical == 'non-critical':
             return ''
         else:
@@ -84,7 +84,7 @@ class BasicConstraintsExtension(CertificateExtension):
         critical = self._get_criticality_str(self.extension_config)
 
         # pathlen is not set on purpose, since it is not recommended for EE certs.
-        self._openssl_config = f'basicConstraints={critical}CA:FALSE'
+        self._openssl_config = f'basicConstraints = {critical}CA:FALSE'
 
 class KeyUsageExtension(CertificateExtension):
 
@@ -121,47 +121,85 @@ class KeyUsageExtension(CertificateExtension):
 
     def __init__(self, extension_config: None | str) -> None:
         super().__init__(extension_config)
-        print(self._default_extension_config)
 
     def _parse_extension_config(self) -> None:
-        print(self.extension_config)
         split_ext_config = self.extension_config.split(':')
         critical = self._get_criticality_str(split_ext_config.pop(0))
 
-        # for entry in split_ext_config:
-        #     split_entry = entry.split('=')
-        #     if len(split_entry) != 2:
-        #         raise ValueError(f'{self.__class__.__name__}: Failed to parse extension option.')
-        #     try:
-        #         self.KeyUsageOption(split_entry[0])
-        #     except ValueError:
-        #         raise ValueError(f'{self.__class__.__name__}: Failed to parse extension option.')
-        #     if
-        # print(critical)
+        options = ''
+        if len(split_ext_config) == 1:
+            try:
+                int(split_ext_config[0], base=2)
 
-        print(split_ext_config)
-        # print(split_ext_config)
-        # if not 2 <= len(split_ext_config) <= 10:
-        #     raise ValueError('Failed to parse key usage extension config string.')
-        # if len(split_ext_config) == 2:
-        #     if self._is_valid_octet(split_ext_config[1]):
-        #         return
+                if len(split_ext_config[0]) == 9:
+                    if split_ext_config[0][0] == '1':
+                        options += self.KeyUsageOption.DIGITAL_SIGNATURE.pretty_value + ', '
+                    if split_ext_config[0][1] == '1':
+                        options += self.KeyUsageOption.NON_REPUDIATION.pretty_value+ ', '
+                    if split_ext_config[0][2] == '1':
+                        options += self.KeyUsageOption.KEY_ENCIPHERMENT.pretty_value+ ', '
+                    if split_ext_config[0][3] == '1':
+                        options += self.KeyUsageOption.DATA_ENCIPHERMENT.pretty_value+ ', '
+                    if split_ext_config[0][4] == '1':
+                        options += self.KeyUsageOption.KEY_AGREEMENT.pretty_value+ ', '
+                    if split_ext_config[0][5] == '1':
+                        options += self.KeyUsageOption.KEY_CERT_SIGN.pretty_value+ ', '
+                    if split_ext_config[0][6] == '1':
+                        options += self.KeyUsageOption.CRL_SIGN.pretty_value+ ', '
+                    if split_ext_config[0][7] == '1':
+                        options += self.KeyUsageOption.ENCIPHER_ONLY.pretty_value+ ', '
+                    if split_ext_config[0][8] == '1':
+                        options += self.KeyUsageOption.DECIPHER_ONLY.pretty_value+ ' '
+
+                    if split_ext_config[0][4] =='0' and split_ext_config[0][7] == '1':
+                        raise RuntimeError(
+                            f'{self.__class__.__name__}: Encipher only can only be set if key agreement is also set.')
+                    if split_ext_config[0][4] == '0' and split_ext_config[0][8] == '1':
+                        raise RuntimeError(
+                            f'{self.__class__.__name__}: Decipher only can only be set if key agreement is also set.')
+
+                if options:
+                    options = options.strip()
+                    if options[-1] == ',':
+                        options = options[:-1]
+                    self._openssl_config = ('keyUsage = ' + critical + options).strip()
+                    return
+                else:
+                    raise ValueError(f'{self.__class__.__name__}: At least one key usage flag must be set to 1.')
+
+            except ValueError:
+                pass
+
+        key_agreement_set = False
+        for entry in split_ext_config:
+            split_entry = entry.split('=')
+            if len(split_entry) != 2:
+                raise ValueError(f'{self.__class__.__name__}: Failed to parse --key-usage option.')
+            try:
+
+                usage_option = self.KeyUsageOption(split_entry[0].lower())
+                if split_entry[1].lower() == 'true':
+                    if usage_option == self.KeyUsageOption.KEY_AGREEMENT:
+                        key_agreement_set = True
+                    if key_agreement_set is False and usage_option == self.KeyUsageOption.ENCIPHER_ONLY:
+                        raise RuntimeError(
+                            f'{self.__class__.__name__}: Encipher only can only be set if key agreement is also set.')
+                    if key_agreement_set is False and usage_option == self.KeyUsageOption.DECIPHER_ONLY:
+                        raise RuntimeError(
+                            f'{self.__class__.__name__}: Decipher only can only be set if key agreement is also set.')
+                    options += usage_option.pretty_value + ', '
+            except ValueError as e:
+                raise ValueError(f'{self.__class__.__name__}: Failed to parse --key-usage option.')
+
+        if options:
+            options = options.strip()
+            if options[-1] == ',':
+                options = options[:-1]
+            self._openssl_config = ('keyUsage = ' + critical + options).strip()
+        else:
+            raise ValueError(f'{self.__class__.__name__}: At least one key usage flag must be set to true.')
 
 
-
-
-        self._openssl_config = ''
-
-    @staticmethod
-    def _is_valid_octet(value) -> bool:
-        if len(value) != 8:
-            return False
-        try:
-            int(value, base=2)
-        except ValueError:
-            return False
-
-        return True
 class TrustpointClientCredential:
 
     inventory: InventoryModel
@@ -525,9 +563,9 @@ class TrustpointClientCredential:
             openssl_cmp_config_path = self.inventory_file_path.parent / 'cmp.cnf'
             content = '[cmp]\n'
             for extension in extensions:
-                content += extension.openssl_config + '\n'
+                if extension.openssl_config:
+                    content += extension.openssl_config + '\n'
             content += '\n'
-            print(content)
             openssl_cmp_config_path.write_text(content)
 
             cmp_ext_cmd_option = f'-config {openssl_cmp_config_path.resolve()} -reqexts cmp '
@@ -563,12 +601,10 @@ class TrustpointClientCredential:
             f'{cmp_ext_cmd_option}'
         )
 
-        print(cmd)
-
         try:
-            subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+            subprocess.run(cmd, shell=True, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as exception_:
-            raise ValueError(f'CMP request failed: {exception_}')
+            raise ValueError(f'CMP request failed.')
 
         enrolled_private_key = new_key_path.read_bytes()
         enrolled_cert = new_cert_path.read_bytes()
