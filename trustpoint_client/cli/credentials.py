@@ -365,7 +365,7 @@ X.509 Extension Options:
 \b
     Basic Constraints
     -----------------
-    --basic-constraints, -bc
+        --basic-constraints, -bc
 
 \b
         The cA flag will always be false and the path length constraint will not be set, since we do not allow
@@ -387,7 +387,7 @@ X.509 Extension Options:
 \b
     Key Usage
     ---------
-    --key-usage, -ku
+        --key-usage, -ku
 
 \b
     The following options can be set, while every options defaults to false.
@@ -424,6 +424,37 @@ X.509 Extension Options:
             To set the same extension, but as non-critical we can use:
             -ku non-critical:101000000
             -ku n:101000000
+
+\b
+    Extended Key Usage
+    ------------------
+        --extended-key-usage, -eku
+
+\b
+        The option expects critical / non-critical followed by a : separated list of extended key usages.
+        These can be one of the following list or any arbitrary OID.
+\b
+        serverAuth
+        clientAuth
+        codeSigning
+        emailProtection
+        timeStamping
+        ocspSigning
+        anyExtendedKeyUsage
+        smartcardLogon
+        kerberosPkinitKdc
+        ipsecIke
+        certificateTransparency
+\b
+        Criticality can be set using 'critical' ('c'), or 'non-critical' ('n'). Compare the examples section.
+
+\b
+        Examples:
+        ---------
+\b
+            --extended-key-usage critical:serverAuth
+            -eku n:clientAuth:codeSigning:emailProtection:1.2.3.4.5
+
 
     """
     try:
