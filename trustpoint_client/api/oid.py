@@ -190,3 +190,24 @@ class SignatureAlgorithmOid(enum.Enum):
         obj.public_key_algo_oid = public_key_algo_oid
         obj.padding_scheme = padding_scheme
         return obj
+
+class ExtendedKeyUsageOptionOid(enum.Enum):
+
+    SERVER_AUTH = ('serverauth', 'serverAuth', '1.3.6.1.5.5.7.3.1')
+    CLIENT_AUTH = ('clientauth', 'clientAuth', '1.3.6.1.5.5.7.3.2')
+    CODE_SIGNING = ('codesigning', 'codeSigning', '1.3.6.1.5.5.7.3.3')
+    EMAIL_PROTECTION = ('emailprotection', 'emailProtection', '1.3.6.1.5.5.7.3.4')
+    TIME_STAMPING = ('timestamping', 'timeStamping', '1.3.6.1.5.5.7.3.8')
+    OCSP_SIGNING = ('ocspsigning', 'ocspSigning', '1.3.6.1.5.5.7.3.9')
+    ANY_EXTENDED_KEY_USAGE = ('anyextendedkeyusage', 'anyExtendedKeyUsage', '2.5.29.37.0')
+    SMARTCARD_LOGON = ('smartcardlogon', 'smartcardLogon', '1.3.6.1.4.1.311.20.2.2')
+    KERBEROS_PKINIT_KDC = ('kerberospkinitkdc', 'kerberosPkinitKdc', '1.3.6.1.5.2.3.5')
+    IPSEC_IKE = ('ipsecike', 'ipsecIke', '1.3.6.1.5.5.7.3.17')
+    CERTIFICATE_TRANSPARENCY = ('certificatetransparency', 'certificateTransparency', '1.3.6.1.4.1.11129.2.4.4')
+
+    def __new__(cls, value: str, pretty_value: str, dotted_string: str) -> ExtendedKeyUsageOptionOid:
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.pretty_value = pretty_value
+        obj.dotted_string = dotted_string
+        return obj

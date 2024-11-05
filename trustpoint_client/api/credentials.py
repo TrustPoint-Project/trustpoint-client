@@ -28,7 +28,7 @@ from pathlib import Path
 
 from trustpoint_client.api.schema import CertificateType
 from trustpoint_client.api.schema import PkiProtocol
-from trustpoint_client.api.oid import NameOid
+from trustpoint_client.api.oid import NameOid, ExtendedKeyUsageOptionOid
 from trustpoint_client.api.schema import CredentialModel
 from cryptography import x509
 
@@ -40,14 +40,10 @@ if TYPE_CHECKING:
 class CertificateExtension(abc.ABC):
 
     _extension_config: str
-    _default_extension_config: str
     _openssl_config: None | str = None
 
-    def __init__(self, extension_config: None | str) -> None:
-        if extension_config is None:
-            self._extension_config = self._default_extension_config
-        else:
-            self._extension_config = extension_config
+    def __init__(self, extension_config: str) -> None:
+        self._extension_config = extension_config
         self._parse_extension_config()
 
     @abc.abstractmethod
@@ -75,9 +71,7 @@ class CertificateExtension(abc.ABC):
 
 class BasicConstraintsExtension(CertificateExtension):
 
-    _default_extension_config = 'critical'
-
-    def __init__(self, extension_config: None | str) -> None:
+    def __init__(self, extension_config: str) -> None:
         super().__init__(extension_config)
 
     def _parse_extension_config(self) -> None:
@@ -106,20 +100,7 @@ class KeyUsageExtension(CertificateExtension):
             obj.pretty_value = pretty_value
             return obj
 
-    _default_extension_config = (
-        'critical:'
-        'digitalSignature=false:'
-        'contentCommitment=false:'
-        'keyEncipherment=false:'
-        'dataEncipherment=false:'
-        'keyAgreement=false:'
-        'keyCertSign=false:'
-        'cRLSign=false:'
-        'encipherOnly=false:'
-        'decipherOnly=false'
-    )
-
-    def __init__(self, extension_config: None | str) -> None:
+    def __init__(self, extension_config: str) -> None:
         super().__init__(extension_config)
 
     def _parse_extension_config(self) -> None:
@@ -198,6 +179,37 @@ class KeyUsageExtension(CertificateExtension):
             self._openssl_config = ('keyUsage = ' + critical + options).strip()
         else:
             raise ValueError(f'{self.__class__.__name__}: At least one key usage flag must be set to true.')
+
+
+class ExtendedKeyUsageExtension(CertificateExtension):
+
+    def __init__(self, extension_config: None | str) -> None:
+        super().__init__(extension_config)
+
+    def _parse_extension_config(self) -> None:
+        split_ext_config = self.extension_config.split(':')
+        critical = self._get_criticality_str(split_ext_config.pop(0))
+
+        options = ''
+        for entry in split_ext_config:
+            print(entry)
+            try:
+                extended_key_usage_option_oid = ExtendedKeyUsageOptionOid(entry).dotted_string
+                print(extended_key_usage_option_oid)
+            except ValueError:
+                try:
+                    extended_key_usage_option_oid = x509.ObjectIdentifier(entry).dotted_string
+                except ValueError:
+                    raise ValueError(f'{self.__class__.__name__}: Failed to parse --extended-key-usage option.')
+            options += extended_key_usage_option_oid + ', '
+
+        if options:
+            options = options.strip()
+            if options[-1] == ',':
+                options = options[:-1]
+            self._openssl_config = ('extendedKeyUsage = ' + critical + options).strip()
+        else:
+            raise ValueError(f'{self.__class__.__name__}: At least one extended key usage option must be given.')
 
 
 class TrustpointClientCredential:

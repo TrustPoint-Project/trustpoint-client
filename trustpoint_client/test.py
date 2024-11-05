@@ -1,3 +1,4 @@
-# length
-int('0110111', base=2)
+from trustpoint_client.api.oid import ExtendedKeyUsageOptionOid
 
+
+a = ExtendedKeyUsageOptionOid('clientauth')

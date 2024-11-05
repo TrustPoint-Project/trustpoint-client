@@ -9,7 +9,7 @@ from trustpoint_client.enums import (
 )
 from trustpoint_client.cli import domain_option_optional, verbose_option
 from trustpoint_client.api import TrustpointClient
-from trustpoint_client.api.credentials import BasicConstraintsExtension, KeyUsageExtension
+from trustpoint_client.api.credentials import BasicConstraintsExtension, KeyUsageExtension, ExtendedKeyUsageExtension
 import prettytable
 from pathlib import Path
 import uuid
@@ -283,6 +283,7 @@ def request() -> None:
     help='Desired validity in days. Will be added to years, if provided.')
 @click.option('--basic-constraints', '-bc', type=str, required=False)
 @click.option('--key-usage', '-ku', type=str, required=False)
+@click.option('--extended-key-usage', '-eku', type=str, required=False)
 @click.argument('unique_name', type=str, required=True)
 def request_generic(
         subject: list[str],
@@ -290,6 +291,7 @@ def request_generic(
         validity_days: int,
         basic_constraints: None | str,
         key_usage: None | str,
+        extended_key_usage: None | str,
         unique_name: str) -> None:
     """Request Generic Certificate
 
@@ -438,6 +440,8 @@ X.509 Extension Options:
             extensions.append(BasicConstraintsExtension(basic_constraints))
         if key_usage:
             extensions.append(KeyUsageExtension(key_usage))
+        if extended_key_usage:
+            extensions.append(ExtendedKeyUsageExtension(extended_key_usage))
 
         trustpoint_client.request_generic(
             domain=None,
@@ -452,7 +456,6 @@ X.509 Extension Options:
 
     _credential_list(domain=None, verbose=False, unique_name=unique_name)
 
-#
 # @req.command(name='tls-client-cert')
 # @click.option('--name', '-n', type=str, required=True, help='The name (handle) to identify the new certificate.')
 # @click.option('--common-name', '-c', type=str, required=False, help='The common name to use.')
