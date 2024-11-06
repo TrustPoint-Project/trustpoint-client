@@ -292,13 +292,13 @@ def request() -> None:
 @click.option('--extended-key-usage', '-eku', type=str, required=False)
 @click.option('--no-authority-key-identifier', '-no-aki', is_flag=True, required=False)
 @click.option('--no-subject-key-identifier', '-no-ski', is_flag=True, required=False)
-@click.option('--subject-alt-name-email', '-san-email', type=str, required=False)
-@click.option('--subject-alt-name-uri', '-san-uri', type=str, required=False)
-@click.option('--subject-alt-name-dns', '-san-dns', type=str, required=False)
-@click.option('--subject-alt-name-rid', '-san-rid', type=str, required=False)
-@click.option('--subject-alt-name-ip', '-san-ip', type=str, required=False)
-@click.option('--subject-alt-name-dir-name', '-san-dn', type=str, required=False)
-@click.option('--subject-alt-name-other-name', '-san-on', type=str, required=False)
+@click.option('--subject-alt-name-email', '-san-email', type=str, required=False, multiple=True)
+@click.option('--subject-alt-name-uri', '-san-uri', type=str, required=False, multiple=True)
+@click.option('--subject-alt-name-dns', '-san-dns', type=str, required=False, multiple=True)
+@click.option('--subject-alt-name-rid', '-san-rid', type=str, required=False, multiple=True)
+@click.option('--subject-alt-name-ip', '-san-ip', type=str, required=False, multiple=True)
+@click.option('--subject-alt-name-dir-name', '-san-dn', type=str, required=False, multiple=True)
+@click.option('--subject-alt-name-other-name', '-san-on', type=str, required=False, multiple=True)
 @click.argument('unique_name', type=str, required=True)
 def request_generic(
         subject: list[str],
@@ -506,17 +506,19 @@ X.509 Extension Options:
         else:
             extensions.append(SubjectKeyIdentifier(True))
 
-        # san_entries = {
-        #     'email': subject_alt_name_email,
-        #     'uri': subject_alt_name_uri,
-        #     'dns': subject_alt_name_dns,
-        #     'rid': subject_alt_name_rid,
-        #     'ip': subject_alt_name_ip,
-        #     'dir_name': subject_alt_name_dir_name,
-        #     'other_name': subject_alt_name_other_name
-        # }
-        #
-        # san_extension = SubjectAlternativeNameExtension(**san_entries)
+        print(list(subject_alt_name_ip))
+        san_entries = {
+            'emails': list(subject_alt_name_email),
+            'uris': list(subject_alt_name_uri),
+            'dnss': list(subject_alt_name_dns),
+            'rids': list(subject_alt_name_rid),
+            'ips': list(subject_alt_name_ip),
+            'dir_names': list(subject_alt_name_dir_name),
+            'other_names': list(subject_alt_name_other_name)
+        }
+
+        extensions.append(SubjectAlternativeNameExtension(**san_entries))
+
 
 
         trustpoint_client.request_generic(

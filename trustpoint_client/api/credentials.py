@@ -245,31 +245,31 @@ class SubjectKeyIdentifier(CertificateExtension):
 
 class SubjectAlternativeNameExtension(CertificateExtension):
 
-    _email: None | list[str] = None
-    _uri: None | list[str] = None
-    _dns: None | list[str] = None
-    _rid: None | list[str] = None
-    _ip: None | list[str] = None
-    _dir_name: None | list[str] = None
-    _other_name: None | list[str] = None
+    _emails: None | list[str] = None
+    _uris: None | list[str] = None
+    _dnss: None | list[str] = None
+    _rids: None | list[str] = None
+    _ips: None | list[str] = None
+    _dir_names: None | list[str] = None
+    _other_names: None | list[str] = None
 
     def __init__(
             self,
-            email: None | list[str] = None,
-            uri: None | list[str] = None,
-            dns: None | list[str]= None,
-            rid: None | list[str] = None,
-            ip: None | list[str] = None,
-            dir_name: None | list[str] = None,
-            other_name: None | list[str] = None) -> None:
+            emails: None | list[str] = None,
+            uris: None | list[str] = None,
+            dnss: None | list[str]= None,
+            rids: None | list[str] = None,
+            ips: None | list[str] = None,
+            dir_names: None | list[str] = None,
+            other_names: None | list[str] = None) -> None:
+        self._emails = emails
+        self._uris = uris
+        self._dnss = dnss
+        self._rids = rids
+        self._ips = ips
+        self._dir_names = dir_names
+        self._other_names = other_names
         super().__init__('')
-        self._email = email
-        self._uri = uri
-        self._dns = dns
-        self._rid = rid
-        self._ip = ip
-        self._dir_name = dir_name
-        self._other_name = other_name
 
     @staticmethod
     def _is_valid_email(email: str) -> bool:
@@ -297,13 +297,7 @@ class SubjectAlternativeNameExtension(CertificateExtension):
         if not isinstance(ip, str):
             return False
         try:
-            ipaddress.IPv4Address(ip)
-            return True
-        except ipaddress.AddressValueError:
-            pass
-
-        try:
-            ipaddress.IPv6Address(ip)
+            ipaddress.ip_address(ip)
             return True
         except ipaddress.AddressValueError:
             pass
@@ -313,57 +307,69 @@ class SubjectAlternativeNameExtension(CertificateExtension):
     @staticmethod
     def _is_valid_other_name(other_name: str) -> bool:
         # TODO(AlexHx8472): This is not
-        pattern = r'^([0-2])((\.0)|(\.[1-9][0-9]*))*;.*$'
+        pattern = r'^([0-2])((\.0)|(\.[1-9][0-9]*))*;.+:.+$'
         return re.match(pattern, other_name) is not None
 
     def _parse_extension_config(self) -> None:
         options = ''
         dir_sect = ''
 
-        for email in self._email:
-            if not self._is_valid_email(email):
-                raise ValueError(f'{self.__class__.__name__}: Invalid email address found: {email}')
-            options += f'email:{email}, '
+        if self._emails:
+            for email in self._emails:
+                if not self._is_valid_email(email):
+                    raise ValueError(f'{self.__class__.__name__}: Invalid email address found: {email}')
+                options += f'email:{email}, '
 
-        for uri in self._uri:
-            if not self._is_valid_uri(uri):
-                raise ValueError(f'{self.__class__.__name__}: Invalid URI found: {uri}')
-            options += f'URI:{uri}, '
+        if self._uris:
+            for uri in self._uris:
+                if not self._is_valid_uri(uri):
+                    raise ValueError(f'{self.__class__.__name__}: Invalid URI found: {uri}')
+                options += f'URI:{uri}, '
 
-        for dns in self._dns:
-            if not self._is_valid_dns(dns):
-                raise ValueError(f'{self.__class__.__name__}: Invalid DNS name found: {dns}')
-            options += f'DNS:{dns}, '
+        if self._dnss:
+            for dns in self._dnss:
+                if not self._is_valid_dns(dns):
+                    raise ValueError(f'{self.__class__.__name__}: Invalid DNS name found: {dns}')
+                options += f'DNS:{dns}, '
 
-        for rid in self._rid:
-            if not self._is_valid_rid(rid):
-                raise ValueError(f'{self.__class__.__name__}: Invalid RID found: {rid}')
-            options += f'RID:{rid}, '
+        if self._rids:
+            for rid in self._rids:
+                if not self._is_valid_rid(rid):
+                    raise ValueError(f'{self.__class__.__name__}: Invalid RID found: {rid}')
+                options += f'RID:{rid}, '
 
-        for ip in self._ip:
-            if not self._is_valid_ip(ip):
-                raise ValueError(f'{self.__class__.__name__}: Invalid IP address found: {ip}')
-            options += f'IP:{ip}, '
+        if self._ips:
+            for ip in self._ips:
+                if not self._is_valid_ip(ip):
+                    raise ValueError(f'{self.__class__.__name__}: Invalid IP address found: {ip}')
+                options += f'IP:{ip}, '
 
-        dir_name_entries = []
-        if self._dir_name:
-            options += 'dirName:dir_sect'
+        if self._dir_names:
+            options += 'dirName:dir_sect, '
             dir_sect = '[dir_sect]\n'
-        for dir_name in self._dir_name:
-            attribute_type, attribute_value = dir_name.split(':', 1)
-            name_oid = NameOid.get_by_name(attribute_type)
-            if name_oid is None:
-                if not self._is_valid_rid(attribute_type):
-                    raise ValueError(f'{self.__class__.__name__}: Invalid OID for dir name found: {attribute_type}')
-            else:
-                attribute_type = name_oid.dotted_string
+            for dir_name in self._dir_names:
+                attribute_type, attribute_value = dir_name.split(':', 1)
+                name_oid = NameOid.get_by_name(attribute_type)
+                if name_oid is None:
+                    if not self._is_valid_rid(attribute_type):
+                        raise ValueError(f'{self.__class__.__name__}: Invalid OID for dir name found: {attribute_type}')
+                else:
+                    attribute_type = name_oid.dotted_string
+                dir_sect += f'{attribute_type} = {attribute_value}\n'
 
-            dir_sect += f'{attribute_type} = {attribute_value}\n'
+        if self._other_names:
+            for other_name in self._other_names:
+                if not self._is_valid_other_name(other_name):
+                    raise ValueError(f'{self.__class__.__name__}: Invalid other_name found: {other_name}')
+                options += f'otherName:{other_name}, '
 
-        for other_name in self._other_name:
-            if not self._is_valid_other_name(other_name):
-                raise ValueError(f'{self.__class__.__name__}: Invalid other_name found: {other_name}')
-            options += f'otherName:{other_name}, '
+        if options:
+            options = 'subjectAltName = ' + options.strip()
+            if options[-1] == ',':
+                options = options[:-1]
+
+        options += f'\n\n{dir_sect}'
+        self._openssl_config = options
 
 
 class TrustpointClientCredential:
@@ -752,8 +758,6 @@ class TrustpointClientCredential:
 
         trustpoint_host = inventory_domain.domain_config.trustpoint_host
         trustpoint_port = inventory_domain.domain_config.trustpoint_port
-
-
 
         cmd = (
             f'openssl cmp '
