@@ -1,4 +1,5 @@
-from trustpoint_client.api.oid import ExtendedKeyUsageOptionOid
+import ipaddress
 
 
-a = ExtendedKeyUsageOptionOid('clientauth')
+a = ipaddress.IPv4Address('bsdfsdf')
+print(a)

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import abc
+import ipaddress
 import subprocess
 import enum
 import re
 import secrets
-import traceback
 
 from typing import TYPE_CHECKING
 
@@ -192,10 +192,8 @@ class ExtendedKeyUsageExtension(CertificateExtension):
 
         options = ''
         for entry in split_ext_config:
-            print(entry)
             try:
                 extended_key_usage_option_oid = ExtendedKeyUsageOptionOid(entry).dotted_string
-                print(extended_key_usage_option_oid)
             except ValueError:
                 try:
                     extended_key_usage_option_oid = x509.ObjectIdentifier(entry).dotted_string
@@ -210,6 +208,162 @@ class ExtendedKeyUsageExtension(CertificateExtension):
             self._openssl_config = ('extendedKeyUsage = ' + critical + options).strip()
         else:
             raise ValueError(f'{self.__class__.__name__}: At least one extended key usage option must be given.')
+
+
+class AuthorityKeyIdentifier(CertificateExtension):
+
+    _include_aki: bool
+
+    def __init__(self, include_aki: bool) -> None:
+        self._include_aki = include_aki
+        super().__init__('')
+
+    def _parse_extension_config(self) -> None:
+        if self._include_aki is True:
+            # This extension is always non-critical
+            # For compatability reasons, we just force the keyid, the issuer u
+            self._openssl_config = None
+        else:
+            self._openssl_config = f'authorityKeyIdentifier = none'
+
+
+class SubjectKeyIdentifier(CertificateExtension):
+
+    _include_ski: bool
+
+    def __init__(self, include_ski: bool) -> None:
+        self._include_ski = include_ski
+        super().__init__('')
+
+    def _parse_extension_config(self) -> None:
+        if self._include_ski is True:
+            # This extension is always non-critical
+            self._openssl_config = None
+        else:
+            self._openssl_config = f'subjectKeyIdentifier = none'
+
+
+class SubjectAlternativeNameExtension(CertificateExtension):
+
+    _email: None | list[str] = None
+    _uri: None | list[str] = None
+    _dns: None | list[str] = None
+    _rid: None | list[str] = None
+    _ip: None | list[str] = None
+    _dir_name: None | list[str] = None
+    _other_name: None | list[str] = None
+
+    def __init__(
+            self,
+            email: None | list[str] = None,
+            uri: None | list[str] = None,
+            dns: None | list[str]= None,
+            rid: None | list[str] = None,
+            ip: None | list[str] = None,
+            dir_name: None | list[str] = None,
+            other_name: None | list[str] = None) -> None:
+        super().__init__('')
+        self._email = email
+        self._uri = uri
+        self._dns = dns
+        self._rid = rid
+        self._ip = ip
+        self._dir_name = dir_name
+        self._other_name = other_name
+
+    @staticmethod
+    def _is_valid_email(email: str) -> bool:
+        pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+        return re.match(pattern, email) is not None
+
+    @staticmethod
+    def _is_valid_uri(uri: str) -> bool:
+        # TODO(AlexHx8472): Consider if we want to check if it is a valid uri or rather allow everything.
+        return True
+
+    @staticmethod
+    def _is_valid_dns(dns: str) -> bool:
+        # TODO(AlexHx8472): Consider if we want to check if it is a valid dns name or rather allow everything.
+        return True
+
+    @staticmethod
+    def _is_valid_rid(rid: str) -> bool:
+        pattern = r'^([0-2])((\.0)|(\.[1-9][0-9]*))*$'
+        return re.match(pattern, rid) is not None
+
+    @staticmethod
+    def _is_valid_ip(ip: str) -> bool:
+        # ipaddress does take other types than str, hence, just to be sure.
+        if not isinstance(ip, str):
+            return False
+        try:
+            ipaddress.IPv4Address(ip)
+            return True
+        except ipaddress.AddressValueError:
+            pass
+
+        try:
+            ipaddress.IPv6Address(ip)
+            return True
+        except ipaddress.AddressValueError:
+            pass
+
+        return False
+
+    @staticmethod
+    def _is_valid_other_name(other_name: str) -> bool:
+        # TODO(AlexHx8472): This is not
+        pattern = r'^([0-2])((\.0)|(\.[1-9][0-9]*))*;.*$'
+        return re.match(pattern, other_name) is not None
+
+    def _parse_extension_config(self) -> None:
+        options = ''
+        dir_sect = ''
+
+        for email in self._email:
+            if not self._is_valid_email(email):
+                raise ValueError(f'{self.__class__.__name__}: Invalid email address found: {email}')
+            options += f'email:{email}, '
+
+        for uri in self._uri:
+            if not self._is_valid_uri(uri):
+                raise ValueError(f'{self.__class__.__name__}: Invalid URI found: {uri}')
+            options += f'URI:{uri}, '
+
+        for dns in self._dns:
+            if not self._is_valid_dns(dns):
+                raise ValueError(f'{self.__class__.__name__}: Invalid DNS name found: {dns}')
+            options += f'DNS:{dns}, '
+
+        for rid in self._rid:
+            if not self._is_valid_rid(rid):
+                raise ValueError(f'{self.__class__.__name__}: Invalid RID found: {rid}')
+            options += f'RID:{rid}, '
+
+        for ip in self._ip:
+            if not self._is_valid_ip(ip):
+                raise ValueError(f'{self.__class__.__name__}: Invalid IP address found: {ip}')
+            options += f'IP:{ip}, '
+
+        dir_name_entries = []
+        if self._dir_name:
+            options += 'dirName:dir_sect'
+            dir_sect = '[dir_sect]\n'
+        for dir_name in self._dir_name:
+            attribute_type, attribute_value = dir_name.split(':', 1)
+            name_oid = NameOid.get_by_name(attribute_type)
+            if name_oid is None:
+                if not self._is_valid_rid(attribute_type):
+                    raise ValueError(f'{self.__class__.__name__}: Invalid OID for dir name found: {attribute_type}')
+            else:
+                attribute_type = name_oid.dotted_string
+
+            dir_sect += f'{attribute_type} = {attribute_value}\n'
+
+        for other_name in self._other_name:
+            if not self._is_valid_other_name(other_name):
+                raise ValueError(f'{self.__class__.__name__}: Invalid other_name found: {other_name}')
+            options += f'otherName:{other_name}, '
 
 
 class TrustpointClientCredential:
@@ -560,6 +714,10 @@ class TrustpointClientCredential:
 
         key = self.devid_module.inventory.devid_keys[key_index].private_key
         cert = self.devid_module.inventory.devid_certificates[cert_index].certificate
+        cert_chain = self.devid_module.inventory.devid_certificates[cert_index].certificate_chain
+
+        cert_chain_path = self.inventory_file_path.parent / 'trusted.pem'
+        cert_chain_path.write_bytes(b''.join(cert_chain))
 
         key_path = self.inventory_file_path.parent / 'key.pem'
         cert_path = self.inventory_file_path.parent / 'cert.pem'
@@ -595,6 +753,8 @@ class TrustpointClientCredential:
         trustpoint_host = inventory_domain.domain_config.trustpoint_host
         trustpoint_port = inventory_domain.domain_config.trustpoint_port
 
+
+
         cmd = (
             f'openssl cmp '
             f'-cmd ir '
@@ -608,10 +768,12 @@ class TrustpointClientCredential:
             f'-implicit_confirm -disable_confirm '
             f'-unprotected_errors '
             f'-tls_used '
+            f'-trusted {cert_chain_path} '
             f'-subject {subject_cmp_str} '
             f'-days {validity_days} '
             f'{cmp_ext_cmd_option}'
         )
+        print(cmd)
 
         try:
             subprocess.run(cmd, shell=True, stderr=subprocess.STDOUT)

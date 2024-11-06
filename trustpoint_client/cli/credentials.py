@@ -9,7 +9,13 @@ from trustpoint_client.enums import (
 )
 from trustpoint_client.cli import domain_option_optional, verbose_option
 from trustpoint_client.api import TrustpointClient
-from trustpoint_client.api.credentials import BasicConstraintsExtension, KeyUsageExtension, ExtendedKeyUsageExtension
+from trustpoint_client.api.credentials import (
+    BasicConstraintsExtension,
+    KeyUsageExtension,
+    ExtendedKeyUsageExtension,
+    AuthorityKeyIdentifier,
+    SubjectKeyIdentifier,
+    SubjectAlternativeNameExtension)
 import prettytable
 from pathlib import Path
 import uuid
@@ -284,6 +290,15 @@ def request() -> None:
 @click.option('--basic-constraints', '-bc', type=str, required=False)
 @click.option('--key-usage', '-ku', type=str, required=False)
 @click.option('--extended-key-usage', '-eku', type=str, required=False)
+@click.option('--no-authority-key-identifier', '-no-aki', is_flag=True, required=False)
+@click.option('--no-subject-key-identifier', '-no-ski', is_flag=True, required=False)
+@click.option('--subject-alt-name-email', '-san-email', type=str, required=False)
+@click.option('--subject-alt-name-uri', '-san-uri', type=str, required=False)
+@click.option('--subject-alt-name-dns', '-san-dns', type=str, required=False)
+@click.option('--subject-alt-name-rid', '-san-rid', type=str, required=False)
+@click.option('--subject-alt-name-ip', '-san-ip', type=str, required=False)
+@click.option('--subject-alt-name-dir-name', '-san-dn', type=str, required=False)
+@click.option('--subject-alt-name-other-name', '-san-on', type=str, required=False)
 @click.argument('unique_name', type=str, required=True)
 def request_generic(
         subject: list[str],
@@ -292,6 +307,15 @@ def request_generic(
         basic_constraints: None | str,
         key_usage: None | str,
         extended_key_usage: None | str,
+        subject_alt_name_email: str,
+    subject_alt_name_uri: str,
+    subject_alt_name_dns: str,
+    subject_alt_name_rid: str,
+    subject_alt_name_ip: str,
+    subject_alt_name_dir_name: str,
+    subject_alt_name_other_name: str,
+        no_authority_key_identifier: bool,
+        no_subject_key_identifier: bool,
         unique_name: str) -> None:
     """Request Generic Certificate
 
@@ -473,6 +497,27 @@ X.509 Extension Options:
             extensions.append(KeyUsageExtension(key_usage))
         if extended_key_usage:
             extensions.append(ExtendedKeyUsageExtension(extended_key_usage))
+        if no_authority_key_identifier:
+            extensions.append(AuthorityKeyIdentifier(False))
+        else:
+            extensions.append(AuthorityKeyIdentifier(True))
+        if no_subject_key_identifier:
+            extensions.append(SubjectKeyIdentifier(False))
+        else:
+            extensions.append(SubjectKeyIdentifier(True))
+
+        # san_entries = {
+        #     'email': subject_alt_name_email,
+        #     'uri': subject_alt_name_uri,
+        #     'dns': subject_alt_name_dns,
+        #     'rid': subject_alt_name_rid,
+        #     'ip': subject_alt_name_ip,
+        #     'dir_name': subject_alt_name_dir_name,
+        #     'other_name': subject_alt_name_other_name
+        # }
+        #
+        # san_extension = SubjectAlternativeNameExtension(**san_entries)
+
 
         trustpoint_client.request_generic(
             domain=None,
