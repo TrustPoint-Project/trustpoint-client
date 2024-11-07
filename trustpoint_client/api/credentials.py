@@ -355,7 +355,8 @@ class SubjectAlternativeNameExtension(CertificateExtension):
                         raise ValueError(f'{self.__class__.__name__}: Invalid OID for dir name found: {attribute_type}')
                 else:
                     attribute_type = name_oid.dotted_string
-                dir_sect += f'{attribute_type} = {attribute_value}\n'
+                # TODO(AlexHx8472): Seems to be an OpenSSL bug. First character is dropped, hence the leading dot.
+                dir_sect += f'.{attribute_type} = {attribute_value}\n'
 
         if self._other_names:
             for other_name in self._other_names:
@@ -696,24 +697,33 @@ class TrustpointClientCredential:
         inventory = self.inventory
         inventory_domain = inventory.domains[domain]
 
-        subject_entries = {}
-        for entry in subject:
-            attribute_type, attribute_value = entry.split(':', 1)
-            name_oid = NameOid.get_by_name(attribute_type)
-            if name_oid is None:
-                pattern = re.compile(r'^([0-2])((\.0)|(\.[1-9][0-9]*))*$')
-                match = pattern.match(attribute_type)
-                if match is None:
-                    raise ValueError(f'Found an invalid subject attribute type: {attribute_type}.')
-                oid = attribute_type
-            else:
-                oid = name_oid.dotted_string
-            subject_entries[oid] = attribute_value
+        # TODO(AlexHx8472): Just a quick hack. This will be resolved / refactored.
+        if len(subject) == 1 and subject[0] == 'trustpoint-tls-client':
+            subject_cmp_str = f'/2.5.4.65=trustpoint.tls-client.{domain}.{unique_name}/2.5.4.3={unique_name}'
+            cert_type = CertificateType.TLS_CLIENT
+        elif len(subject) == 1 and subject[0] == 'trustpoint-tls-server':
+            subject_cmp_str = f'/2.5.4.65=trustpoint.tls-server.{domain}.{unique_name}/2.5.4.3={unique_name}'
+            cert_type = CertificateType.TLS_SERVER
+        else:
+            cert_type = CertificateType.GENERIC
+            subject_entries = {}
+            for entry in subject:
+                attribute_type, attribute_value = entry.split(':', 1)
+                name_oid = NameOid.get_by_name(attribute_type)
+                if name_oid is None:
+                    pattern = re.compile(r'^([0-2])((\.0)|(\.[1-9][0-9]*))*$')
+                    match = pattern.match(attribute_type)
+                    if match is None:
+                        raise ValueError(f'Found an invalid subject attribute type: {attribute_type}.')
+                    oid = attribute_type
+                else:
+                    oid = name_oid.dotted_string
+                subject_entries[oid] = attribute_value
 
-        # The serial number of the device is not included by default, due to possible privacy concerns.
-        subject_cmp_str = f'/2.5.4.65=trustpoint.generic-cert.{domain}.{unique_name}'
-        for key, value in subject_entries.items():
-            subject_cmp_str += f'/{key}={value}'
+            # The serial number of the device is not included by default, due to possible privacy concerns.
+            subject_cmp_str = f'/2.5.4.65=trustpoint.generic.{domain}.{unique_name}'
+            for key, value in subject_entries.items():
+                subject_cmp_str += f'/{key}={value}'
 
         key_index = inventory_domain.ldevid_credential.key_index
         cert_index = inventory_domain.ldevid_credential.certificate_index
@@ -777,7 +787,7 @@ class TrustpointClientCredential:
             f'-days {validity_days} '
             f'{cmp_ext_cmd_option}'
         )
-        print(cmd)
+        # print(cmd)
 
         try:
             subprocess.run(cmd, shell=True, stderr=subprocess.STDOUT)
@@ -804,7 +814,7 @@ class TrustpointClientCredential:
             certificate_index=new_cert_index,
             key_index=new_key_index,
             subject=enrolled_subject,
-            certificate_type=CertificateType.GENERIC,
+            certificate_type=cert_type,
             not_valid_before=loaded_cert.not_valid_before_utc,
             not_valid_after=loaded_cert.not_valid_after_utc
         )

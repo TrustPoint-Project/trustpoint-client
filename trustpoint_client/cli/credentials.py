@@ -506,7 +506,6 @@ X.509 Extension Options:
         else:
             extensions.append(SubjectKeyIdentifier(True))
 
-        print(list(subject_alt_name_ip))
         san_entries = {
             'emails': list(subject_alt_name_email),
             'uris': list(subject_alt_name_uri),
@@ -533,6 +532,90 @@ X.509 Extension Options:
         raise click.ClickException(f'\n{exception}\n')
 
     _credential_list(domain=None, verbose=False, unique_name=unique_name)
+
+
+@request.command(name='tls-client')
+@click.argument('unique_name', type=str, required=True)
+def request_tls_client(unique_name: str) -> None:
+
+    try:
+        trustpoint_client = TrustpointClient()
+
+        # no more default pki protocol
+        if trustpoint_client.default_domain is None:
+            click.ClickException('No default domain is configured.')
+
+        validity_days = 365
+
+        extensions = [
+            BasicConstraintsExtension('non-critical'),
+            KeyUsageExtension('critical:100010000'),
+            ExtendedKeyUsageExtension('non-critical:clientauth')
+        ]
+
+        trustpoint_client.request_generic(
+            domain=None,
+            unique_name=unique_name,
+            subject=['trustpoint-tls-client'],
+            extensions=extensions,
+            validity_days=validity_days
+        )
+
+    except ValueError as exception:
+        raise click.ClickException(f'\n{exception}\n')
+
+    _credential_list(domain=None, verbose=False, unique_name=unique_name)
+
+
+@request.command(name='tls-server')
+@click.option('--san-ip', '-i', type=str, required=False, multiple=True)
+@click.option('--san-domain', '-d', type=str, required=False, multiple=True)
+@click.argument('unique_name', type=str, required=True)
+def request_tls_server(unique_name: str, san_ip: tuple[str], san_domain: tuple[str]) -> None:
+
+    if not san_ip and not san_domain:
+        raise click.ClickException('At least one SAN IP or SAN DNS-Domain must be specified.')
+
+    try:
+        trustpoint_client = TrustpointClient()
+
+        # no more default pki protocol
+        if trustpoint_client.default_domain is None:
+            click.ClickException('No default domain is configured.')
+
+        validity_days = 365
+
+        extensions = [
+            BasicConstraintsExtension('non-critical'),
+            KeyUsageExtension('critical:101010000'),
+            ExtendedKeyUsageExtension('non-critical:serverauth')
+        ]
+
+        trustpoint_client.request_generic(
+            domain=None,
+            unique_name=unique_name,
+            subject=['trustpoint-tls-server'],
+            extensions=extensions,
+            validity_days=validity_days
+        )
+
+        san_entries = {
+            'emails': [],
+            'uris': [],
+            'dnss': list(san_domain),
+            'rids': [],
+            'ips': list(san_ip),
+            'dir_names': [],
+            'other_names': []
+        }
+
+        extensions.append(SubjectAlternativeNameExtension(**san_entries))
+
+    except ValueError as exception:
+        raise click.ClickException(f'\n{exception}\n')
+
+    _credential_list(domain=None, verbose=False, unique_name=unique_name)
+
 
 # @req.command(name='tls-client-cert')
 # @click.option('--name', '-n', type=str, required=True, help='The name (handle) to identify the new certificate.')
