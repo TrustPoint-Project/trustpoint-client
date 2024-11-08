@@ -720,8 +720,10 @@ class TrustpointClientCredential:
                     oid = name_oid.dotted_string
                 subject_entries[oid] = attribute_value
 
-            # The serial number of the device is not included by default, due to possible privacy concerns.
             subject_cmp_str = f'/2.5.4.65=trustpoint.generic.{domain}.{unique_name}'
+            subject_cmp_str += f'/2.5.4.5={self.inventory.domains[domain].domain_config.serial_number}'
+            #TODO: Should the serial number of the device be included by default? Due to possible privacy concerns.
+            subject_cmp_str += f'/2.5.4.65={self.inventory.domains[domain].domain_config.device}'
             for key, value in subject_entries.items():
                 subject_cmp_str += f'/{key}={value}'
 
