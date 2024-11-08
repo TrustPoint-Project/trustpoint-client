@@ -3,307 +3,154 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Trustpoint-Client's documentation!
-=============================================
+.. _quickstart_guide: quickstart-guide
+
+Trustpoint-Client Documentation
+...............................
+
+The Trustpoint-Client is intended to simplify device onboarding, certificate requests and certificate management
+while using the Trustpoint as a Registration Authority (RA) or a Certificate Authority (CA).
+
+|
+
+.. image:: _static/trustpoint_client_banner.png
+   :align: center
+
+|
+
+Introduction
+============
+
+This section tries to give a quick summary of terms used in this documentation and the intended usage
+of the Trustpoint-Client.
+|
+
+Terms
+-----
+
+General concepts and terms are described in this introductory section.
+To set-up and configure the Trustpoint itself, please refer to the
+`Trustpoint-Documentation <https://trustpoint.readthedocs.io/en/latest/>`_.
+
+|
+
+Certificate
+~~~~~~~~~~~
+A certificate refers to a X.509 certificate, which contains the corresponding public key.
+
+|
+
+Private Key
+~~~~~~~~~~~
+A private key of an asymmetric key pair. A public key can usually be derived or is contained in a private key object.
+
+|
+
+Certificate Chain
+~~~~~~~~~~~~~~~~~
+The certificate chain corresponding to a certificate, including the Root CA certificate, but excluding the
+certificate itself that the certificate chain is concerned about.
+
+|
+
+Credential
+~~~~~~~~~~
+A credential is a set of a private key, corresponding certificate and certificate chain. Both the certificate and
+private key implicitly include the public key.
+
+|
+
+Domain Credential
+~~~~~~~~~~~~~~~~~
+A domain credential is the credential the Trustpoint-Client will acquire when onboarding to a domain. This
+credential is then used to authenticate itself against the Trustpoint and thus allows the Trustpoint-Client to
+request application certificates corresponding to that domain.
+
+|
+
+Issuing CA
+~~~~~~~~~~
+An Issuing CA is an entity on the Trustpoint that issues new certificates while forcing all certificates
+in the certificate hierarchy to utilize the same Signature-Suite, that is the same signature algorithm and the same
+hash function.
+
+|
+
+Onboarding
+~~~~~~~~~~
+Onboarding describes the process of acquiring a first credential , the domain credential, which allows
+the device (Trustpoint-Client) to authenticate itself against the Trustpoint and thus request further application
+certificates from that domain.
+
+.. Note::
+
+   The process of onboarding is currently called provisioning in the Trustpoint-Client context.
+
+|
+
+Domain
+~~~~~~
+Domains are an abstraction on top of the Issuing CAs. Every Domain has exactly one Issuing CA assosiated to it,
+while an Issuing CA can be part of multiple domains.
+
+Certificates associated with a domain will always have the same Signature-Suite (compare Issuing-CA)
+
+The Trustpoint-Client can onboard to one or more domains. After successful onboarding onto a domain,
+the Trustpoint-Client has acquired a corresponding domain credential which allows it to request application
+certificates issued by the associated Issuing CA.
+
+.. Warning::
+
+   The Trustpoint-Client currently only allows to onboard to a single domain. However, in the future the
+   Trustpoint-Client will allow to to onboard to multiple domains and thus the device will be able to acquire
+   certificates from different PKI-hierarchies.
+
+|
+
+Trust-Store
+~~~~~~~~~~~
+Trust-Stores are sets of certificates that are trustworthy. The Trustpoint can be configured to offer arbitrary
+Trust-Stores in any domain which can then be requested and stored within the Trustpoint-Client.
+
+.. Warning::
+
+   This feature is not yet implemented in neither the Trustpoint-Client and Trustpoint, but will be included in
+   the first proper release of the Trustpoint-Client and Trustpoint.
+
+|
+
+Environment & Context
+---------------------
+
+The Trustpoint-Client is intended to make the onboarding, application certificate requests and their management
+much more comfortable, i.e. the user or admin will not require deep knowledge about
+public key infrastructures to securely onboard a device into a domain and request and manage application certificates.
+
+.. Note::
+
+   It is not required to use the Trustpoint-Client to utilize the Trustpoint. However, without it, you will need to
+   handle the certificate requests and protocols all by yourself. This includes onboarding the device manually and
+   utilizing PKI protocols like EST and CMP by yourself to request and / or revoke certificates for that device.
+
+A simplified environment in which the Trustpoint and Trustpoint-Client may run in is depicted in the diagram below.
+For more context and information about the Trustpoint, please refer to the
+`Trustpoint-Documentation <https://trustpoint.readthedocs.io/en/latest/>`_.
+
+|
+
+.. image:: _static/trustpoint-client.drawio.svg
+   :align: center
+
+|
+
+
+
+Contents
+--------
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-|
-|
-
-List Commands
--------------
-
-.. code-block:: text
-
-   trustpoint-client list keys
-
-| Lists all available LDevID keys
-| Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint-client list certs
-
-| Lists all available LDevID certificates
-| Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint-client list trust-stores
-
-| Lists all available trust-stores.
-| Option: -d / --domain
-
-|
-|
-
-Certificate Request Commands
-----------------------------
-
-.. code-block:: text
-
-   trustpoint-client request <type of certificate> -n <name> <options depending on type of certificate>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint-client request renew -n <name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint-client request revoke -n <name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint-client request cacerts -n <name>
-
-Option: -d / --domain
-
-|
-|
-
-.. note::
-
-   The name is only a reference used by the client
-
-|
-|
-
-Trust-Store Request Commands
-----------------------------
-
-.. code-block:: text
-
-   trustpoint-client request trust-store -n <name>
-
-Option: -d / --domain
-
-.. note::
-
-   The name is not defined by the client, but the trustpoint profiles.
-   It will be uniquely identified by the 2-tuple (domain, name).
-
-|
-|
-
-Delete Commands
----------------
-
-.. note::
-
-   Delete commands are only available for revoked and/or expired certificates / keys.
-
-.. code-block:: text
-
-   trustpoint delete cacerts -n <name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint delete cert -n <name>
-
-| Option: -d / --domain
-| This will also delete the corresponding cacerts.
-
-.. code-block:: text
-
-   trustpoint delete key -n <name>
-
-| Option: -d / --domain
-| This will also delete the corresponding certificate and cacerts.
-
-|
-|
-
-Enable Commands
----------------
-
-.. code-block:: text
-
-   trustpoint enable cert -n <name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint disable cert -n <name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint enable key -n <name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint disable key -n <name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint enable trust-store -n <name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint disable trust-store -n <name>
-
-Option: -d / --domain
-
-|
-|
-
-File Path Commands
-..................
-
-These commands will store the corresponding entity as a files in the required format (read-only) and return the path.
-However, these files will stay under the management of the trustpoint-client and thus mitigate any issues that can
-arise if these are exported and placed and unsupervised locations. (Read Only)
-
-.. warning::
-
-   If keys are used this way, the included password generator will be used to generate the password.
-   It will only be printed to the CLI once on creation!
-
-   For most cases, it is discouraged to overwrite the use of the included password generator.
-
-.. code-block:: text
-
-   trustpoint get-file-path public-key -n <name> -f <format>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint get-file-path private-key -n <name> -f <format>
-
-| Option: -d / --domain
-| Option: -o / --overwrite-password-generator <password>
-
-.. code-block:: text
-
-   trustpoint get-file-path cert -n <name> -f <format>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint get-file-path cacerts -n <name> -f <format>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint get-file-path trust-store -n <name> -f <format>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint get-file-path credential -n <name> -f <format>
-
-| Option: -d / --domain
-| Option: -o / --overwrite-password-generator <password>
-
-|
-|
-
-Export Commands
-...............
-
-These commands allow the user to export the key, certificate, cacerts and/or trust-stores
-to be exported in the desired format.
-
-.. warning::
-
-   Generally, it is discouraged to export data from this client, however, it may be required in some cases.
-   If keys are exported, the included password generator will be used to generate the password.
-   It will only be printed to the CLI once on creation!
-
-   For most cases, it is discouraged to overwrite the use of the included password generator.
-
-.. code-block:: text
-
-   trustpoint export public-key -n <name> -f <format> <file_path/name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint export private-key -n <name> -f <format> <file_path/name>
-
-| Option: -d / --domain
-| Option: -o / --overwrite-password-generator <password>
-
-.. code-block:: text
-
-   trustpoint export cert -n <name> -f <format> <file_path/name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint export cacerts -n <name> -f <format> <file_path/name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint export trust-store -n <name> -f <format> <file_path/name>
-
-Option: -d / --domain
-
-.. code-block:: text
-
-   trustpoint export credential -n <name> -f <format> <file_path/name>
-
-| Option: -d / --domain
-| Option: -o / --overwrite-password-generator <password>
-
-|
-|
-
-
-Other Considerations
---------------------
-
-.. note::
-
-   We could consider extending this by adding trustpoint defined certificate profiles, that basically bundle
-   the certificate type and selected options.
-
-|
-|
-
-Future Extensions
------------------
-
-PKCS#11 / HSM / TPM support
-...........................
-
-It is intended to support PKCS#11 so that the private keys are stored in the dedicated hardware.
-The Trustpoint Client will then allow to get the corresponding PKCS#11 handles to access and/or use the objects
-resident in the dedicated hardware.
-
-This may or may not include exportability. This will likely be configurable.
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   :maxdepth: 1
+   :caption: Getting Started :
+
+   Home<self>
+   Quickstart<quickstart>
