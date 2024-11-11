@@ -25,7 +25,7 @@ from trustpoint_client.api.exceptions import (
 from trustpoint_client.api.decorator import handle_unexpected_errors
 from trustpoint_client.api.schema import InventoryModel, TrustpointClientConfigModel
 from trustpoint_client.api.credentials import TrustpointClientCredential
-from trustpoint_client.api.provision import TrustpointClientOnboardingMixin
+from trustpoint_client.api.onboard import TrustpointClientOnboardingMixin
 from trustpoint_client.api.domains import TrustpointClientDomain, DomainConfig
 
 if TYPE_CHECKING:

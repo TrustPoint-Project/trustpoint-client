@@ -14,13 +14,13 @@ from trustpoint_client.api.schema import PkiProtocol
 from trustpoint_client.api.zero_touch_aoki import aoki_onboarding
 
 
-def pretty_print_provisioning_results(data: dict[str, str]) -> None:
+def pretty_print_onboarding_results(data: dict[str, str]) -> None:
     """Echoes the results as PrettyTable to CLI (stdout).
 
     Args:
-        data: Provisioning results.
+        data: Onboarding results.
     """
-    click.echo('\nTrustpoint Client successfully provisioned.\n')
+    click.echo('\nTrustpoint Client successfully onboarded.\n')
     table = prettytable.PrettyTable(['Property', 'Value'])
     table.add_rows([[key.capitalize(), value] for key, value in data.items()])
     table.align = 'l'
@@ -29,17 +29,17 @@ def pretty_print_provisioning_results(data: dict[str, str]) -> None:
 
 
 @click.group
-def provision() -> None:
-    """Commands to provision the Trustpoint Client."""
+def onboard() -> None:
+    """Commands to onboard the Trustpoint Client."""
 
 
-@provision.command
+@onboard.command
 @click.option('--otp', '-o', required=True, type=str, help='The One-Time Password to use.')
 @click.option('--device', '-d', required=True, type=str, help='The device name.')
 @click.option('--host', '-h', required=True, type=str, help='The domain name or IP address of the trustpoint.')
 @click.option('--port', '-p', required=False, type=int, default=443, help='The port of the trustpoint if not 443.')
 def auto(otp: str, device: str, host: str, port: int) -> None:
-    """Provisioning using the Trustpoint Client onboarding process."""
+    """Onboarding using the Trustpoint Client onboarding process."""
     trustpoint_client = TrustpointClient()
 
     try:
@@ -49,14 +49,14 @@ def auto(otp: str, device: str, host: str, port: int) -> None:
             host, port = host.split(':')
         port = int(port)
 
-        result = trustpoint_client.provision_auto(otp, device, host, port)
+        result = trustpoint_client.onboard_auto(otp, device, host, port)
     except Exception as exception:
         raise click.ClickException(str(exception)) from exception
 
-    pretty_print_provisioning_results(result)
+    pretty_print_onboarding_results(result)
 
 
-@provision.command
+@onboard.command
 @click.option('--host', '-h', type=str, required=True, prompt=True, help='The trustpoint host name.')
 @click.option('--port', '-p', type=int, required=True, prompt=True, help='The trustpoint port.')
 @click.option(
@@ -147,16 +147,16 @@ def manual(  # noqa: PLR0913, C901
 
     try:
         pki_protocol = PkiProtocol(pki_protocol.upper())
-        result = trustpoint_client.provision_manual(
+        result = trustpoint_client.onboard_manual(
             trustpoint_host=host, trustpoint_port=port, pki_protocol=pki_protocol, credential=credential
         )
     except Exception as exception:
         raise click.ClickException(str(exception)) from exception
 
-    pretty_print_provisioning_results(result)
+    pretty_print_onboarding_results(result)
 
 
-@provision.command
+@onboard.command
 @click.option(
     '--host',
     '-h',

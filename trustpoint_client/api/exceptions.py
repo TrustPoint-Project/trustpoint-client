@@ -90,11 +90,11 @@ class UnexpectedTrustpointClientError(TrustpointClientError):
             super().__init__(f'\n\n\tAn unexpected error occurred.\n\t{message}\n\tException raised: {exception}\n')
 
 
-class ProvisioningError(TrustpointClientError):
-    """Raised if a generic error occurred during the provisioning process."""
+class OnboardingError(TrustpointClientError):
+    """Raised if a generic error occurred during the onboarding process."""
 
     def __init__(self, message: str) -> None:
-        """Initializes the ProvisioningError."""
+        """Initializes the OnboardingError."""
         super().__init__(message)
 
 

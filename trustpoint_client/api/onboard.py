@@ -43,7 +43,7 @@ class TrustpointClientOnboardingMixin:
     default_domain: property
     _store_inventory: callable
 
-    def provision_auto(
+    def onboard_auto(
         self, otp: str, device: str, host: str, port: int = 443, extra_data: dict | None = None
     ) -> dict[str, int | str]:
         """Automatic onboarding using the Trustpoint-Client onboarding method.
@@ -55,50 +55,50 @@ class TrustpointClientOnboardingMixin:
             port: The port number of the Trustpoint.
             extra_data: Extra data to pass to the onboarding process.
         """
-        provision_data = {'otp': otp, 'device': device, 'host': host, 'port': port}
+        onboard_data = {'otp': otp, 'device': device, 'host': host, 'port': port}
 
         if extra_data:  # trust store and protocol info already provided (e.g. by zero-touch demo)
             try:
-                provision_data['trust-store'] = extra_data['trust-store']
-                provision_data['domain'] = extra_data['domain']
-                provision_data['signature-suite'] = SignatureSuite(extra_data['signature-suite'])
-                provision_data['pki-protocol'] = PkiProtocol(extra_data['pki-protocol'])
+                onboard_data['trust-store'] = extra_data['trust-store']
+                onboard_data['domain'] = extra_data['domain']
+                onboard_data['signature-suite'] = SignatureSuite(extra_data['signature-suite'])
+                onboard_data['pki-protocol'] = PkiProtocol(extra_data['pki-protocol'])
             except KeyError as exception:
                 err_msg = f'extra_data provided, but does not contain required key {exception}.'
                 raise ValueError(err_msg) from exception
         else:
-            self._provision_get_trust_store(provision_data=provision_data)
+            self._onboard_get_trust_store(onboard_data=onboard_data)
         tls_trust_store_path = Path(__file__).parent / Path('tls_trust_store.pem')
-        tls_trust_store_path.write_text(provision_data['trust-store'])
-        provision_data['crypto-key'] = self.generate_new_key(provision_data['signature-suite'])
-        self._provision_get_ldevid(provision_data=provision_data, tls_trust_store_path=tls_trust_store_path)
-        self._provision_get_ldevid_chain(provision_data=provision_data, tls_trust_store_path=tls_trust_store_path)
+        tls_trust_store_path.write_text(onboard_data['trust-store'])
+        onboard_data['crypto-key'] = self.generate_new_key(onboard_data['signature-suite'])
+        self._onboard_get_ldevid(onboard_data=onboard_data, tls_trust_store_path=tls_trust_store_path)
+        self._onboard_get_ldevid_chain(onboard_data=onboard_data, tls_trust_store_path=tls_trust_store_path)
         tls_trust_store_path.unlink()
 
-        loaded_cert = x509.load_pem_x509_certificate(provision_data['ldevid'].encode())
-        provision_data['ldevid-subject'] = loaded_cert.subject.rfc4514_string()
-        provision_data['ldevid-certificate-type'] = CertificateType.LDEVID
-        provision_data['ldevid-not-valid-before'] = loaded_cert.not_valid_before_utc
-        provision_data['ldevid-not-valid-after'] = loaded_cert.not_valid_after_utc
-        provision_data['ldevid-expires-in'] = (
-            provision_data['ldevid-not-valid-after'] - provision_data['ldevid-not-valid-before']
+        loaded_cert = x509.load_pem_x509_certificate(onboard_data['ldevid'].encode())
+        onboard_data['ldevid-subject'] = loaded_cert.subject.rfc4514_string()
+        onboard_data['ldevid-certificate-type'] = CertificateType.LDEVID
+        onboard_data['ldevid-not-valid-before'] = loaded_cert.not_valid_before_utc
+        onboard_data['ldevid-not-valid-after'] = loaded_cert.not_valid_after_utc
+        onboard_data['ldevid-expires-in'] = (
+            onboard_data['ldevid-not-valid-after'] - onboard_data['ldevid-not-valid-before']
         )
-        provision_data['serial-number'] = loaded_cert.subject.get_attributes_for_oid(oid.NameOID.SERIAL_NUMBER)[0].value
+        onboard_data['serial-number'] = loaded_cert.subject.get_attributes_for_oid(oid.NameOID.SERIAL_NUMBER)[0].value
 
-        self._store_ldevid_in_inventory(provision_data=provision_data)
+        self._store_ldevid_in_inventory(onboard_data=onboard_data)
 
         result = {
-            'Device': provision_data['device'],
-            'Serial-Number': provision_data['serial-number'],
-            'Host': provision_data['host'],
-            'Port': provision_data['port'],
-            'PKI-Protocol': provision_data['pki-protocol'].value,
-            'Signature-Suite': provision_data['signature-suite'].value,
-            'LDevID Subject': provision_data['ldevid-subject'],
-            'LDevID Certificate Type': provision_data['ldevid-certificate-type'].value,
-            'LDevID Not-Valid-Before': provision_data['ldevid-not-valid-before'],
-            'LDevID Not-Valid-After': provision_data['ldevid-not-valid-after'],
-            'LDevID Expires-In': provision_data['ldevid-expires-in'],
+            'Device': onboard_data['device'],
+            'Serial-Number': onboard_data['serial-number'],
+            'Host': onboard_data['host'],
+            'Port': onboard_data['port'],
+            'PKI-Protocol': onboard_data['pki-protocol'].value,
+            'Signature-Suite': onboard_data['signature-suite'].value,
+            'LDevID Subject': onboard_data['ldevid-subject'],
+            'LDevID Certificate Type': onboard_data['ldevid-certificate-type'].value,
+            'LDevID Not-Valid-Before': onboard_data['ldevid-not-valid-before'],
+            'LDevID Not-Valid-After': onboard_data['ldevid-not-valid-after'],
+            'LDevID Expires-In': onboard_data['ldevid-expires-in'],
         }
 
         if result['Host'] == 'localhost':
@@ -106,12 +106,12 @@ class TrustpointClientOnboardingMixin:
 
         return result
 
-    def _provision_get_trust_store(self, provision_data: dict[str, Any]) -> None:
-        host = provision_data['host']
-        url_extension = provision_data['device']
-        otp = provision_data['otp'].encode()
-        salt = provision_data['device'].encode()
-        port = provision_data['port']
+    def _onboard_get_trust_store(self, onboard_data: dict[str, Any]) -> None:
+        host = onboard_data['host']
+        url_extension = onboard_data['device']
+        otp = onboard_data['otp'].encode()
+        salt = onboard_data['device'].encode()
+        port = onboard_data['port']
 
         # We do not yet check the TLS server certificate, thus verify=False is set on purpose here
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -124,9 +124,9 @@ class TrustpointClientOnboardingMixin:
             err_msg = 'HMAC missing in HTTP header.'
             raise ValueError(err_msg)
 
-        provision_data['domain'] = response.headers['domain']
-        provision_data['signature-suite'] = SignatureSuite(response.headers['signature-suite'])
-        provision_data['pki-protocol'] = PkiProtocol(response.headers['pki-protocol'])
+        onboard_data['domain'] = response.headers['domain']
+        onboard_data['signature-suite'] = SignatureSuite(response.headers['signature-suite'])
+        onboard_data['pki-protocol'] = PkiProtocol(response.headers['pki-protocol'])
 
         pbkdf2_iter = 1000000
         derived_key = hashlib.pbkdf2_hmac('sha256', otp, salt, pbkdf2_iter, dklen=32)
@@ -135,7 +135,7 @@ class TrustpointClientOnboardingMixin:
             err_msg = 'HMACs do not match.'
             raise RuntimeError(err_msg)
 
-        provision_data['trust-store'] = response.content.decode()
+        onboard_data['trust-store'] = response.content.decode()
 
     @staticmethod
     def generate_new_key(signature_suite: SignatureSuite) -> PrivateKey:
@@ -160,15 +160,15 @@ class TrustpointClientOnboardingMixin:
         raise ValueError(err_msg)
 
     @staticmethod
-    def _provision_get_ldevid(provision_data: dict[str, Any], tls_trust_store_path: Path) -> None:
-        host = provision_data['host']
-        url_extension = provision_data['device']
-        otp = provision_data['otp'].encode()
-        salt = provision_data['device'].encode()
-        port = provision_data['port']
-        key = provision_data['crypto-key']
+    def _onboard_get_ldevid(onboard_data: dict[str, Any], tls_trust_store_path: Path) -> None:
+        host = onboard_data['host']
+        url_extension = onboard_data['device']
+        otp = onboard_data['otp'].encode()
+        salt = onboard_data['device'].encode()
+        port = onboard_data['port']
+        key = onboard_data['crypto-key']
 
-        hash_algo = hashes.SHA384 if provision_data['signature-suite'] == SignatureSuite.SECP384R1 else hashes.SHA256
+        hash_algo = hashes.SHA384 if onboard_data['signature-suite'] == SignatureSuite.SECP384R1 else hashes.SHA256
 
         csr_builder = x509.CertificateSigningRequestBuilder()
         csr_builder = csr_builder.subject_name(
@@ -190,13 +190,13 @@ class TrustpointClientOnboardingMixin:
             error_message = 'Server returned HTTP code ' + str(ldevid_response.status_code)
             raise ValueError(error_message)
 
-        provision_data['ldevid'] = ldevid_response.content.decode()
+        onboard_data['ldevid'] = ldevid_response.content.decode()
 
     @staticmethod
-    def _provision_get_ldevid_chain(provision_data: dict[str, Any], tls_trust_store_path: Path) -> None:
-        host = provision_data['host']
-        url_extension = provision_data['device']
-        port = provision_data['port']
+    def _onboard_get_ldevid_chain(onboard_data: dict[str, Any], tls_trust_store_path: Path) -> None:
+        host = onboard_data['host']
+        url_extension = onboard_data['device']
+        port = onboard_data['port']
 
         cert_chain = requests.get(
             f'https://{host}:{port}/api/onboarding/ldevid/cert-chain/{url_extension}',
@@ -208,40 +208,40 @@ class TrustpointClientOnboardingMixin:
             exc_msg = 'Server returned HTTP code ' + str(cert_chain.status_code)
             raise ValueError(exc_msg)
 
-        provision_data['ldevid-cert-chain'] = cert_chain.content.decode()
+        onboard_data['ldevid-cert-chain'] = cert_chain.content.decode()
 
-    def _store_ldevid_in_inventory(self, provision_data: dict[str, Any]) -> None:
-        ldevid_key_index = self.devid_module.insert_ldevid_key(provision_data['crypto-key'])
+    def _store_ldevid_in_inventory(self, onboard_data: dict[str, Any]) -> None:
+        ldevid_key_index = self.devid_module.insert_ldevid_key(onboard_data['crypto-key'])
         self.devid_module.enable_devid_key(ldevid_key_index)
-        ldevid_certificate_index = self.devid_module.insert_ldevid_certificate(provision_data['ldevid'])
+        ldevid_certificate_index = self.devid_module.insert_ldevid_certificate(onboard_data['ldevid'])
         self.devid_module.enable_devid_certificate(ldevid_certificate_index)
-        self.devid_module.insert_ldevid_certificate_chain(ldevid_certificate_index, provision_data['ldevid-cert-chain'])
+        self.devid_module.insert_ldevid_certificate_chain(ldevid_certificate_index, onboard_data['ldevid-cert-chain'])
 
         inventory = self.inventory
         ldevid_credential = CredentialModel(
             unique_name='domain-credential',
             certificate_index=ldevid_certificate_index,
             key_index=ldevid_key_index,
-            subject=provision_data['ldevid-subject'],
-            certificate_type=provision_data['ldevid-certificate-type'],
-            not_valid_before=provision_data['ldevid-not-valid-before'],
-            not_valid_after=provision_data['ldevid-not-valid-after'],
+            subject=onboard_data['ldevid-subject'],
+            certificate_type=onboard_data['ldevid-certificate-type'],
+            not_valid_before=onboard_data['ldevid-not-valid-before'],
+            not_valid_after=onboard_data['ldevid-not-valid-after'],
         )
 
-        trustpoint_host = '127.0.0.1' if provision_data['host'] == 'localhost' else provision_data['host']
+        trustpoint_host = '127.0.0.1' if onboard_data['host'] == 'localhost' else onboard_data['host']
 
         domain_config = DomainConfigModel(
-            device=provision_data['device'],
-            serial_number=provision_data['serial-number'],
-            domain=provision_data['domain'],
+            device=onboard_data['device'],
+            serial_number=onboard_data['serial-number'],
+            domain=onboard_data['domain'],
             trustpoint_host=trustpoint_host,
-            trustpoint_port=provision_data['port'],
-            signature_suite=provision_data['signature-suite'],
-            pki_protocol=provision_data['pki-protocol'],
-            tls_trust_store=provision_data['trust-store'],
+            trustpoint_port=onboard_data['port'],
+            signature_suite=onboard_data['signature-suite'],
+            pki_protocol=onboard_data['pki-protocol'],
+            tls_trust_store=onboard_data['trust-store'],
         )
 
-        inventory.domains[provision_data['domain']] = DomainModel(
+        inventory.domains[onboard_data['domain']] = DomainModel(
             domain_config=domain_config,
             ldevid_credential=ldevid_credential,
             credentials={},
@@ -250,9 +250,9 @@ class TrustpointClientOnboardingMixin:
         self._store_inventory(inventory)
 
         if self.default_domain is None:
-            self.default_domain = provision_data['domain']
+            self.default_domain = onboard_data['domain']
 
-    def provision_manual(
+    def onboard_manual(
         self, trustpoint_host: str, trustpoint_port: int, pki_protocol: PkiProtocol, credential: CredentialSerializer
     ) -> dict[str, int | str]:
         """Onboards the trustpoint-client through importing the LDevID credential as file.
@@ -261,7 +261,7 @@ class TrustpointClientOnboardingMixin:
             trustpoint_host: The host name or address (IPv4) of the trustpoint.
             trustpoint_port: The port number of the trustpoint.
             pki_protocol: The default pki protocol to use to manage certificates.
-            credential: The credential to be used for provisioning.
+            credential: The credential to be used for onboarding.
         """
         cert = credential.credential_certificate.as_crypto()
         err_msg = 'Certificate does not seem to be an LDevID issued by a Trustpoint.'

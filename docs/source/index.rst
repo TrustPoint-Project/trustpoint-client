@@ -84,7 +84,7 @@ certificates from that domain.
 
 .. Note::
 
-   The process of onboarding is currently called provisioning in the Trustpoint-Client context.
+   The process of onboarding is currently called onboarding in the Trustpoint-Client context.
 
 |
 

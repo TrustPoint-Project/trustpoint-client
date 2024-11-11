@@ -51,5 +51,5 @@ Just download the package from Trustpoint during onboarding and transfer it to t
    Note that trustpoint_client executed below is the directory (as package), not the trustpoint_client.py file
    ```shell
    python3 -m trustpoint_client
-   python3 -m trustpoint_client provision --otp abc --salt fgh --url xyz
+   python3 -m trustpoint_client onboard --otp abc --salt fgh --url xyz
    ```

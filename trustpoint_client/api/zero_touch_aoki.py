@@ -8,7 +8,7 @@
 
 # Step 1: Discover the Trustpoint/AOKI Server service (mDNS)
 
-# Step 2: Establish provisionally trusted TLS connection
+# Step 2: Establish onboardally trusted TLS connection
 # It is assumed that TLS client authentication is unavailable (IDevID not directly usable as client cert)
 
 # Send onboarding request, including IDevID cert and a nonce for the server to sign to prove possession of the ownership key
@@ -34,7 +34,7 @@
 
 # Step 1: Discover the Trustpoint/AOKI Server service (mDNS)
 
-# Step 2: Establish provisionally trusted TLS connection, use IDevID as client cert
+# Step 2: Establish onboardally trusted TLS connection, use IDevID as client cert
 
 # Send onboarding request, including a nonce for the server to sign to prove possession of the ownership key
 
@@ -70,7 +70,7 @@ from enum import IntEnum
 
 from pathlib import Path
 
-from trustpoint_client.api.exceptions import ProvisioningError
+from trustpoint_client.api.exceptions import OnboardingError
 from trustpoint_client.api import TrustpointClient
 
 logging.basicConfig(level=logging.INFO)
@@ -82,8 +82,8 @@ HTTP_STATUS_OK = 200
 
 CERT_PATH = Path('__file__').resolve().parent / 'trustpoint_client/demo_data'
 
-class ProvisioningState(IntEnum):
-    """Enum for the state of the provisioning process."""
+class OnboardingState(IntEnum):
+    """Enum for the state of the onboarding process."""
 
     ERROR = -1
     NO_TRUST = 0
@@ -104,7 +104,7 @@ def verify_ownership_cert(ownership_cert: bytes) -> bool:
         print(truststore_data)
         if ownership_cert not in truststore_data:
             exc_msg = 'Server ownership certificate is not part of the client trust store.'
-            raise ProvisioningError(exc_msg)
+            raise OnboardingError(exc_msg)
     return True
 
 def verify_server_signature(message: bytes, ownership_cert: bytes, server_signature: bytes) -> bool:
@@ -121,13 +121,13 @@ def verify_server_signature(message: bytes, ownership_cert: bytes, server_signat
         print(f'Signer public key: {signer_public_key.public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()}')
     except Exception as e:
         exc_msg = 'Failed to load public key from ownership certificate.'
-        raise ProvisioningError(exc_msg) from e
+        raise OnboardingError(exc_msg) from e
     try:
         print(f'Server signature: {server_signature}')
         signer_public_key.verify(signature=server_signature, data=message, signature_algorithm=ec.ECDSA(hashes.SHA256()))
     except InvalidSignature as e:
         exc_msg = 'Server signature verification failed.'
-        raise ProvisioningError(exc_msg) from e
+        raise OnboardingError(exc_msg) from e
 
 
 def _aoki_onboarding(host: str, port: int = 443):
@@ -138,11 +138,11 @@ def _aoki_onboarding(host: str, port: int = 443):
         return
     
     trustpoint_client = TrustpointClient()
-    #trustpoint_client.set_provisioning_state(ProvisioningState.NO_TRUST)
+    #trustpoint_client.set_onboarding_state(OnboardingState.NO_TRUST)
 
     log.info(f'AOKI onboarding with Trustpoint server at {host} started')
 
-    # Step 2: Establish provisionally trusted TLS connection
+    # Step 2: Establish onboardally trusted TLS connection
     # Send onboarding request, including IDevID cert and a nonce for the server to sign to prove possession of the ownership key
 
     click.echo('Sending onboarding request to server...')
@@ -157,7 +157,7 @@ def _aoki_onboarding(host: str, port: int = 443):
     log.debug(response.headers)
     if response.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(response.status_code)
-        raise ProvisioningError(exc_msg)
+        raise OnboardingError(exc_msg)
 
     # Step 3: Receive and verify the server's ownership certificate
     # Response is the servers ownership certificate and a nonce to sign
@@ -165,11 +165,11 @@ def _aoki_onboarding(host: str, port: int = 443):
         response_json = response.json()
     except Exception as e:
         exc_msg = 'Server response is not a valid JSON object.'
-        raise ProvisioningError(exc_msg)
+        raise OnboardingError(exc_msg)
 
     if 'aoki-server-signature' not in response.headers:
         exc_msg = 'AOKI Signature header is required but missing in Trustpoint response headers.'
-        raise ProvisioningError(exc_msg)
+        raise OnboardingError(exc_msg)
     
     try:
         ownership_cert = response_json['ownership_cert'].encode('utf-8')
@@ -179,11 +179,11 @@ def _aoki_onboarding(host: str, port: int = 443):
         server_signature = base64.b64decode(response.headers['aoki-server-signature'].encode('utf-8'))
     except KeyError as e:
         exc_msg = 'Server init response JSON is missing required fields.'
-        raise ProvisioningError(exc_msg) from e
+        raise OnboardingError(exc_msg) from e
     
     if client_nonce_response != client_nonce:
         exc_msg = 'Client nonce mismatch in server response.'
-        raise ProvisioningError(exc_msg)
+        raise OnboardingError(exc_msg)
     
     click.echo('Received ownership certificate from server, verifying...')
     
@@ -193,7 +193,7 @@ def _aoki_onboarding(host: str, port: int = 443):
     verify_server_signature(response_bytes, ownership_cert=ownership_cert, server_signature=server_signature)
 
     click.echo('Ownership certificate verified!')
-    # trustpoint_client.set_provisioning_state(ProvisioningState.ONESIDED_TRUST)
+    # trustpoint_client.set_onboarding_state(OnboardingState.ONESIDED_TRUST)
     
     # Step 4: If client-side verification is successful, sign server_nonce with IDevID private key and send back to server
     # TODO: Support all DevID conformant signature suites (RSA-2048/SHA-256, ECDSA P-256/SHA-256, ECDSA P-384/SHA-38)
@@ -229,19 +229,19 @@ def _aoki_onboarding(host: str, port: int = 443):
         exc_msg = 'Server returned HTTP code ' + str(response.status_code)
         log.debug(response.text)
         print(response.text)
-        raise ProvisioningError(exc_msg)
+        raise OnboardingError(exc_msg)
 
     try:
         response_json = response.json()
     except Exception as e:
         exc_msg = 'Server response is not a valid JSON object.'
-        raise ProvisioningError(exc_msg)
+        raise OnboardingError(exc_msg)
     
     try:
         otp = response_json['otp']
         device_name = response_json['device']
 
-        zero_touch_provision_data = {
+        zero_touch_onboard_data = {
             'domain': response_json['domain'],
             'signature-suite': response_json['signature_suite'],
             'pki-protocol': response_json['pki_protocol'],
@@ -249,15 +249,15 @@ def _aoki_onboarding(host: str, port: int = 443):
         }
     except KeyError as e:
         exc_msg = 'Server finalize response JSON is missing required fields.'
-        raise ProvisioningError(exc_msg) from e
+        raise OnboardingError(exc_msg) from e
     
     click.echo('Received OTP from server, proceeding to LDevID enrollment...')
     
-    result = trustpoint_client.provision_auto(
-        otp=otp, device=device_name, host=host, port=port, extra_data=zero_touch_provision_data
+    result = trustpoint_client.onboard_auto(
+        otp=otp, device=device_name, host=host, port=port, extra_data=zero_touch_onboard_data
     )
     
-    click.echo('\nTrustpoint Client Zero-Touch provisioning successful.\n')
+    click.echo('\nTrustpoint Client Zero-Touch onboarding successful.\n')
     table = prettytable.PrettyTable(['Property', 'Value'])
     table.add_rows([[key.capitalize(), value] for key, value in result.items()])
     table.align = 'l'
