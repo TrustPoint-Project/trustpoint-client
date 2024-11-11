@@ -39,9 +39,9 @@ def handle_exception(func: callable) -> callable:
     def _wrapper_function(ctx: click.Context, *args: Any, **kwargs: dict[str, Any]) -> Any:
         try:
             return ctx.invoke(func, *args, **kwargs)
-        except Exception as exception:
-            err_msg = str(exception)
-            raise click.ClickException(err_msg) from exception
+        except Exception as exc:
+            err_msg = str(exc)
+            raise click.ClickException(err_msg) from exc
 
     return _wrapper_function
 
