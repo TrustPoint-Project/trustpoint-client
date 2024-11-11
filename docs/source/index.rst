@@ -18,11 +18,23 @@ while using the Trustpoint as a Registration Authority (RA) or a Certificate Aut
 
 |
 
+Contents
+--------
+
+.. toctree::
+   :maxdepth: 1
+
+   Home<self>
+   Quickstart<quickstart>
+
+|
+
 Introduction
 ============
 
 This section tries to give a quick summary of terms used in this documentation and the intended usage
 of the Trustpoint-Client.
+
 |
 
 Terms
@@ -129,28 +141,14 @@ public key infrastructures to securely onboard a device into a domain and reques
 .. Note::
 
    It is not required to use the Trustpoint-Client to utilize the Trustpoint. However, without it, you will need to
-   handle the certificate requests and protocols all by yourself. This includes onboarding the device manually and
-   utilizing PKI protocols like EST and CMP by yourself to request and / or revoke certificates for that device.
+   handle all the certificate requests and protocols by yourself. This includes onboarding the device manually and
+   utilizing PKI protocols like EST and CMP directly to request, renew and revoke certificates for that device.
 
 A simplified environment in which the Trustpoint and Trustpoint-Client may run in is depicted in the diagram below.
-For more context and information about the Trustpoint, please refer to the
+For more context and information about the Trustpoint and how to set it up, please refer to the
 `Trustpoint-Documentation <https://trustpoint.readthedocs.io/en/latest/>`_.
 
 |
 
 .. image:: _static/trustpoint-client.drawio.svg
    :align: center
-
-|
-
-
-
-Contents
---------
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Getting Started :
-
-   Home<self>
-   Quickstart<quickstart>
