@@ -5,6 +5,7 @@ import click
 import prettytable
 from pathlib import Path
 
+from trustpoint_devid_module.serializer import CredentialSerializer
 
 from trustpoint_client.api.mdns import find_services
 from trustpoint_client.api.zero_touch_aoki import aoki_onboarding
@@ -33,7 +34,10 @@ def auto(otp: str, device: str, host: str, port: int) -> None:
         host, port = host.split(':')
     port = int(port)
 
-    result = trustpoint_client.provision_auto(otp, device, host, port)
+    try:
+        result = trustpoint_client.provision_auto(otp, device, host, port)
+    except Exception as exception:
+        raise click.ClickException(str(exception)) from exception
 
     click.echo('\nTrustpoint Client successfully provisioned.\n')
     table = prettytable.PrettyTable(['Property', 'Value'])
@@ -94,31 +98,65 @@ def manual(
         domain_credential_private_key: None | str,
         password: None | str) -> None:
     """Creates a domain and injects the domain credential from file."""
+    trustpoint_client = TrustpointClient()
+    #
+    # host = None
+    # port = None
+    # if ':' in trustpoint_host:
+    #     host, port = trustpoint_host.split(':')
+    #     print('nope')
+    # elif not trustpoint_port:
+    #     port = 443
+    # if not host or not port:
+    #     raise click.ClickException('Please provide a valid host and port.')
+    # port = int(port)
 
     if domain_credential_pkcs12:
         domain_credential_pkcs12 = Path(domain_credential_pkcs12).read_bytes()
-    if domain_credential_certificate:
-        domain_credential_certificate = Path(domain_credential_certificate).read_bytes()
-    if domain_credential_certificate_chain:
-        domain_credential_certificate_chain = Path(domain_credential_certificate_chain).read_bytes()
-    if domain_credential_private_key:
-        domain_credential_private_key = Path(domain_credential_private_key).read_bytes()
-    if password:
-        password = password.encode()
+        try:
+            credential = CredentialSerializer(domain_credential_pkcs12, password=password)
+        except Exception as exception:
+            raise click.ClickException(
+                'Failed to parse the PKCS#12 file. Either malformed or wrong password.') from exception
+    else:
+        if domain_credential_certificate:
+            domain_credential_certificate = Path(domain_credential_certificate).read_bytes()
+        if domain_credential_certificate_chain:
+            domain_credential_certificate_chain = Path(domain_credential_certificate_chain).read_bytes()
+        if domain_credential_private_key:
+            domain_credential_private_key = Path(domain_credential_private_key).read_bytes()
+        if password:
+            password = password.encode()
+        try:
+            credential = CredentialSerializer(
+                (
+                    domain_credential_private_key,
+                    domain_credential_certificate,
+                    domain_credential_certificate_chain
+                ),
+                password=password
+            )
+        except Exception as exception:
+            raise click.ClickException(
+                'Failed to parse given credential. Either malformed or wrong password.') from exception
 
-    click.echo('\nNot yet implemented!\n')
-    # trustpoint_client = TrustpointClient()
-    # result = trustpoint_client.provision_manual(
-    #     trustpoint_host=trustpoint_host,
-    #     trustpoint_port=trustpoint_port,
-    #     pki_protocol=pki_protocol,
-    #     domain_credential_pkcs12=domain_credential_pkcs12,
-    #     domain_credential_certificate=domain_credential_certificate,
-    #     domain_credential_certificate_chain=domain_credential_certificate_chain,
-    #     domain_credential_private_key=domain_credential_private_key,
-    #     password=password
-    # )
+    # try:
+    pki_protocol = PkiProtocol(pki_protocol.upper())
+    result = trustpoint_client.provision_manual(
+        trustpoint_host=trustpoint_host,
+        trustpoint_port=trustpoint_port,
+        pki_protocol=pki_protocol,
+        credential=credential
+    )
+    # except Exception as exception:
+    #     raise click.ClickException(str(exception)) from exception
 
+    click.echo('\nTrustpoint Client successfully provisioned.\n')
+    table = prettytable.PrettyTable(['Property', 'Value'])
+    table.add_rows([[key.capitalize(), value] for key, value in result.items()])
+    table.align = 'l'
+    click.echo(table)
+    click.echo()
 
 
 @provision.command

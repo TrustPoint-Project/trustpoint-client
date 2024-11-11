@@ -8,6 +8,7 @@ import urllib3
 from typing import TYPE_CHECKING
 
 from cryptography.x509 import oid
+from trustpoint_devid_module.serializer import CredentialSerializer
 
 if TYPE_CHECKING:
     from typing import Any
@@ -247,87 +248,82 @@ class TrustpointClientProvision:
             self,
             trustpoint_host: str,
             trustpoint_port: int,
-            pki_protocol: str,
-            domain_credential_pkcs12: None | bytes,
-            domain_credential_certificate: None | bytes,
-            domain_credential_certificate_chain: None | bytes,
-            domain_credential_private_key: None | bytes,
-            password: None | bytes) -> dict[str, Any]:
-        # TODO(AlexHx8472): Implement manual provision -> fix manual download first.
-        pass
-        # error_msg = (
-        #     'Please either provide a PKCS#12 file or '
-        #     'the certificate, certificate chain and private key separately.')
-        # if domain_credential_certificate:
-        #     if domain_credential_certificate_chain or domain_credential_certificate_chain or domain_credential_private_key:
-        #         raise ValueError(error_msg)
-        # elif domain_credential_certificate_chain and domain_credential_certificate_chain and domain_credential_private_key:
-        #     if domain_credential_pkcs12:
-        #         raise ValueError(error_msg)
-        # else:
-        #     raise ValueError(error_msg)
-        #
-        # try:
-        #     PkiProtocol(pki_protocol)
-        # except Exception:
-        #     raise ValueError(
-        #         f'Provided PKI protocol {pki_protocol} is not a valid PKI protocol. '
-        #         f'Choose one from {[pki_protocol.value for pki_protocol in PkiProtocol]}.')
-        #
-        # if trustpoint_host == 'localhost':
-        #     trustpoint_host = '127.0.0.1'
-        #
-        # # TODO(AlexHx8472): Host validation
-        #
-        # if not 0 < trustpoint_port < 65536:
-        #     raise ValueError(
-        #         f'The provided Trustpoint Port {trustpoint_port} is not a valid port number. '
-        #         f'It must comply with 0 < port < 65536.')
-        #
-        # if domain_credential_pkcs12:
-        #     try:
-        #         priv_key, cert, cert_chain = pkcs12.load_key_and_certificates(
-        #             data=domain_credential_pkcs12,
-        #             password=password
-        #         )
-        #     except Exception:
-        #         raise ValueError('Failed to parse PKCS#12 file. Either wrong password or corrupted file.')
-        # else:
-        #     try:
-        #         priv_key = load_pem_private_key(domain_credential_private_key, password=password)
-        #     except Exception:
-        #         raise ValueError('Failed to parse private key file. Either wrong password or corrupted file.')
-        #     try:
-        #         cert = x509.load_pem_x509_certificate(domain_credential_certificate)
-        #     except Exception:
-        #         raise ValueError('Failed to parse the certificate file. Either wrong format or corrupted file.')
-        #     try:
-        #         cert_chain = x509.load_pem_x509_certificates(domain_credential_certificate_chain)
-        #     except Exception:
-        #         raise ValueError('Failed to parse the certificate file. Either wrong format or corrupted file.')
-        #
-        # def _check_priv_key_matches_cert(private_key: PrivateKey, certificate: x509.Certificate) -> None:
-        #     pub_key_from_priv_key = private_key.public_key().public_bytes(
-        #         encoding=serialization.Encoding.PEM,
-        #         format=serialization.PublicFormat.SubjectPublicKeyInfo)
-        #     pub_key_from_cert = certificate.public_key().public_bytes(
-        #         encoding=serialization.Encoding.PEM,
-        #         format=serialization.PublicFormat.SubjectPublicKeyInfo
-        #     )
-        #     if pub_key_from_priv_key != pub_key_from_cert:
-        #         raise ValueError('The private key does not match the certificate.')
-        #
-        # def _get_signature_suite_from_priv_key_and_cert(
-        #         private_key: PrivateKey,
-        #         certificate: x509.Certificate) -> SignatureSuite:
+            pki_protocol: PkiProtocol,
+            credential: CredentialSerializer) -> dict:
 
-        #
-        # result = {
-        #     'Device': provision_data['device'],
-        #     'Host': provision_data['host'],
-        #     'Port': provision_data['port'],
-        #     'PKI-Protocol': provision_data['pki-protocol'].value,
-        #     'Signature-Suite': provision_data['signature-suite'].value
-        # }
-        #
-        # return result
+        cert = credential.credential_certificate.as_crypto()
+        err_msg = 'Certificate does not seem to be an LDevID issued by a Trustpoint.'
+        try:
+            serial = cert.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
+            pseudonym = cert.subject.get_attributes_for_oid(x509.OID_PSEUDONYM)[0].value
+            domain = cert.subject.get_attributes_for_oid(x509.OID_DN_QUALIFIER)[0].value.split('.')
+            if domain[0].lower() != 'trustpoint':
+                raise ValueError(err_msg)
+            domain = domain[-1]
+        except KeyError as exception:
+            raise ValueError(err_msg) from exception
+
+        if domain in self.inventory.domains:
+            raise ValueError(f'Domain with unique name {domain} already exists.')
+
+        private_key = credential.credential_private_key.as_crypto()
+        cert = credential.credential_certificate.as_crypto()
+        cert_chain = credential.additional_certificates.as_crypto()
+
+
+        ldevid_key_index = self.devid_module.insert_ldevid_key(private_key)
+        self.devid_module.enable_devid_key(ldevid_key_index)
+        ldevid_certificate_index = self.devid_module.insert_ldevid_certificate(cert)
+        self.devid_module.enable_devid_certificate(ldevid_certificate_index)
+        self.devid_module.insert_ldevid_certificate_chain(
+            ldevid_certificate_index, cert_chain)
+
+        inventory = self.inventory
+        ldevid_credential = CredentialModel(
+            unique_name='domain-credential',
+            certificate_index=ldevid_certificate_index,
+            key_index=ldevid_key_index,
+            subject=cert.subject.rfc4514_string(),
+            certificate_type=CertificateType.LDEVID,
+            not_valid_before=cert.not_valid_before_utc,
+            not_valid_after=cert.not_valid_after_utc
+        )
+
+        if trustpoint_host == 'localhost':
+            trustpoint_host = '127.0.0.1'
+
+        domain_config = DomainConfigModel(
+            device=pseudonym,
+            serial_number=serial,
+            domain=domain,
+            trustpoint_host=trustpoint_host,
+            trustpoint_port=trustpoint_port,
+            signature_suite=SignatureSuite.get_signature_suite_by_public_key(cert.public_key()),
+            pki_protocol=pki_protocol,
+            tls_trust_store='None'
+        )
+
+        inventory.domains[domain] = DomainModel(
+            domain_config=domain_config,
+            ldevid_credential=ldevid_credential,
+            credentials={},
+            trust_stores={},
+        )
+        self._store_inventory(inventory)
+
+        if self.default_domain is None:
+            self.default_domain = domain
+
+        return {
+            'Device': pseudonym,
+            'Serial-Number': serial,
+            'Host': trustpoint_host,
+            'Port': trustpoint_port,
+            'PKI-Protocol': pki_protocol.value,
+            'Signature-Suite': SignatureSuite.get_signature_suite_by_public_key(cert.public_key()).value,
+            'LDevID Subject': cert.subject.rfc4514_string(),
+            'LDevID Certificate Type': CertificateType.LDEVID.value,
+            'LDevID Not-Valid-Before': cert.not_valid_before_utc,
+            'LDevID Not-Valid-After': cert.not_valid_after_utc,
+            'LDevID Expires-In': cert.not_valid_after_utc - cert.not_valid_before_utc
+        }

@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 from pydantic import BaseModel, ConfigDict
 import datetime
+from cryptography.hazmat.primitives.asymmetric import rsa, ec
 
 
 class SignatureSuite(enum.Enum):
@@ -12,6 +13,27 @@ class SignatureSuite(enum.Enum):
     RSA4096 = 'RSA4096SHA256'
     SECP256R1 = 'SECP256R1SHA256'
     SECP384R1 = 'SECP384R1SHA384'
+
+    @classmethod
+    def get_signature_suite_by_public_key(
+            cls, public_key: rsa.RSAPublicKey | ec.EllipticCurvePublicKey) -> SignatureSuite:
+        if isinstance(public_key, rsa.RSAPublicKey):
+            if public_key.key_size == 2048:
+                return cls.RSA2048
+            if public_key.key_size == 3072:
+                return cls.RSA3072
+            if public_key.key_size == 4096:
+                return cls.RSA4096
+            raise ValueError
+
+        if isinstance(public_key, ec.EllipticCurvePublicKey):
+            if isinstance(public_key.curve, ec.SECP256R1):
+                return cls.SECP256R1
+            if isinstance(public_key.curve, ec.SECP384R1):
+                return cls.SECP384R1
+            raise ValueError
+
+        raise ValueError
 
 
 class PkiProtocol(enum.Enum):
