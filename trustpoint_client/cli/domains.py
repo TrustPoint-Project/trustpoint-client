@@ -6,7 +6,7 @@ import click
 import prettytable
 
 from trustpoint_client.api import TrustpointClient
-from trustpoint_client.cli import domain_option_optional, domain_option_required, verbose_option
+from trustpoint_client.cli import domain_option_optional, domain_option_required, handle_exception, verbose_option
 
 
 @click.group()
@@ -50,6 +50,7 @@ def echo_domain_info_tables(dict_: dict[str, dict[str, str]]) -> None:
 @click.option('--all', '-a', 'all_domains', is_flag=True, required=False, default=False)
 @domain_option_optional
 @verbose_option
+@handle_exception
 def domain_list(domain: None | str, verbose: bool, all_domains: bool) -> None:  # noqa: FBT001
     """Lists information about the configured domains."""
     trustpoint_client = TrustpointClient()
@@ -90,6 +91,7 @@ def domain_list(domain: None | str, verbose: bool, all_domains: bool) -> None:  
 
 @domains.command(name='delete')
 @domain_option_required
+@handle_exception
 def domain_delete(domain: str) -> None:
     """Deletes the specific domain and all corresponding credentials.
 
@@ -129,6 +131,7 @@ def domain_config_get() -> None:
 
 @domain_config_get.command(name='host')
 @domain_option_required
+@handle_exception
 def domain_config_get_host(domain: str) -> None:
     """Gets the host name or address (IPv4) of the Trustpoint for the domain.
 
@@ -151,6 +154,7 @@ def domain_config_get_host(domain: str) -> None:
 
 @domain_config_get.command(name='port')
 @domain_option_required
+@handle_exception
 def domain_config_get_port(domain: str) -> None:
     """Gets the port number of the Trustpoint for the domain.
 
@@ -173,6 +177,7 @@ def domain_config_get_port(domain: str) -> None:
 
 @domain_config_get.command(name='signature-suite')
 @domain_option_required
+@handle_exception
 def domain_config_get_signature_suite(domain: str) -> None:
     """Gets the signature-suite used by the domain.
 
@@ -195,6 +200,7 @@ def domain_config_get_signature_suite(domain: str) -> None:
 
 @domain_config_get.command(name='pki-protocol')
 @domain_option_required
+@handle_exception
 def domain_config_get_pki_protocol(domain: str) -> None:
     """Gets the default PKI-protocol for the domain.
 
@@ -217,6 +223,7 @@ def domain_config_get_pki_protocol(domain: str) -> None:
 
 @domain_config_get.command(name='tls-trust-store')
 @domain_option_required
+@handle_exception
 def domain_config_get_tls_trust_store(domain: str) -> None:
     """Gets the TLS Trust Store for the domain.
 
@@ -245,6 +252,7 @@ def domain_config_set() -> None:
 @domain_config_set.command(name='host')
 @click.option('--host', '-h', type=str, required=True, help='The host name or address (IPv4) to set for the domain.')
 @domain_option_required
+@handle_exception
 def domain_config_set_host(host: str, domain: str) -> None:
     """Sets the host name or address (IPv4) of the Trustpoint for the domain.
 
@@ -265,6 +273,7 @@ def domain_config_set_host(host: str, domain: str) -> None:
 @domain_config_set.command(name='port')
 @click.option('--port', '-p', type=int, required=True, help='The port number of the Trustpoint to set for the domain.')
 @domain_option_required
+@handle_exception
 def domain_config_set_port(port: int, domain: str) -> None:
     """Sets the port number of the Trustpoint for the domain.
 
@@ -285,6 +294,7 @@ def domain_config_set_port(port: int, domain: str) -> None:
 @domain_config_set.command(name='pki-protocol')
 @click.option('--pki-protocol', '-p', type=str, required=True, help='The PKI-protocol to set as default.')
 @domain_option_required
+@handle_exception
 def domain_config_set_pki_protocol(pki_protocol: str, domain: str) -> None:
     """Sets the default PKI-protocol for the domain.
 
@@ -306,6 +316,7 @@ def domain_config_set_pki_protocol(pki_protocol: str, domain: str) -> None:
 @domain_config_set.command(name='tls-trust-store')
 @click.option('--tls-trust-store', '-t', type=click.Path(), required=True, help='The TLS trust-store file path.')
 @domain_option_required
+@handle_exception
 def domain_config_set_tls_trust_store(tls_trust_store: str, domain: str) -> None:
     """Set the TLS Trust Store for the domain.
 
@@ -324,6 +335,7 @@ def domain_config_clear() -> None:
 
 @domain_config_clear.command(name='host')
 @domain_option_required
+@handle_exception
 def domain_config_clear_host(domain: str) -> None:
     """Clears (deletes) the host name or address (IPv4) of the Trustpoint for the domain.
 
@@ -342,6 +354,7 @@ def domain_config_clear_host(domain: str) -> None:
 
 @domain_config_clear.command(name='port')
 @domain_option_required
+@handle_exception
 def domain_config_clear_port(domain: str) -> None:
     """Clears (deletes) the port number of the Trustpoint for the domain.
 
@@ -360,6 +373,7 @@ def domain_config_clear_port(domain: str) -> None:
 
 @domain_config_clear.command(name='pki-protocol')
 @domain_option_required
+@handle_exception
 def domain_config_clear_pki_protocol(domain: str) -> None:
     """Clears (deletes) the default PKI-protocol for the domain.
 
@@ -378,6 +392,7 @@ def domain_config_clear_pki_protocol(domain: str) -> None:
 
 @domain_config_clear.command(name='tls-trust-store')
 @domain_option_required
+@handle_exception
 def domain_config_clear_tls_trust_store(domain: str) -> None:
     """Clears (deletes) the TLS Trust Store for the domain.
 

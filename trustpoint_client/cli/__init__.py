@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import os
+from functools import wraps
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
-from trustpoint_client.cli.version import version_id
+try:
+    version_id = importlib.metadata.version('trustpoint_client')
+except Exception as exception:
+    raise click.ClickException(str(exception)) from exception
+
+if TYPE_CHECKING:
+    from typing import Any
 
 CLI_DIRECTORY = str(Path(__file__).resolve().parent)
 
@@ -16,6 +25,25 @@ domain_option_optional = click.option('--domain', '-d', type=str, required=False
 verbose_option = click.option(
     '--verbose', '-v', is_flag=True, required=False, default=False, help='Enable verbose mode.'
 )
+
+
+def handle_exception(func: callable) -> callable:
+    """Handles exceptions gracefully for the CLI application.
+
+    Args:
+        func: The decorated function.
+    """
+
+    @wraps(func)
+    @click.pass_context
+    def _wrapper_function(ctx: click.Context, *args: Any, **kwargs: dict[str, Any]) -> Any:
+        try:
+            return ctx.invoke(func, *args, **kwargs)
+        except Exception as exception:
+            err_msg = str(exception)
+            raise click.ClickException(err_msg) from exception
+
+    return _wrapper_function
 
 
 class TrustPointClientCli(click.MultiCommand):

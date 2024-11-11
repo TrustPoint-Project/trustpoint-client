@@ -9,7 +9,7 @@ from prettytable import PrettyTable
 
 from trustpoint_client.api import TrustpointClient
 from trustpoint_client.api.exceptions import DomainDoesNotExist
-from trustpoint_client.cli import domain_option_required
+from trustpoint_client.cli import domain_option_required, handle_exception
 
 
 @click.group
@@ -18,6 +18,7 @@ def config() -> None:
 
 
 @config.command(name='list')
+@handle_exception
 def config_list() -> None:
     """Lists the current configurations."""
     table = PrettyTable()
@@ -41,6 +42,7 @@ def config_get() -> None:
 
 
 @config_get.command(name='default-domain')
+@handle_exception
 def config_get_default_domain() -> None:
     """Gets the current default trustpoint domain."""
     default_domain = TrustpointClient().default_domain
@@ -60,6 +62,7 @@ def config_set() -> None:
 
 @config_set.command(name='default-domain')
 @domain_option_required
+@handle_exception
 def config_set_default_domain(domain: str) -> None:
     """Sets / overwrites the default trustpoint domain."""
     try:
@@ -78,6 +81,7 @@ def config_clear() -> None:
 
 
 @config_clear.command(name='default-domain')
+@handle_exception
 def config_clear_default_domain() -> None:
     """Clears the default trustpoint domain."""
     if TrustpointClient().default_domain is None:

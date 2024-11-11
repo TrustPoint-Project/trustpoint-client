@@ -17,7 +17,7 @@ from trustpoint_client.api.credentials import (
     SubjectAlternativeNameExtension,
     SubjectKeyIdentifier,
 )
-from trustpoint_client.cli import domain_option_optional, verbose_option
+from trustpoint_client.cli import domain_option_optional, handle_exception, verbose_option
 from trustpoint_client.enums import CertificateCollectionFormat, CertificateFormat, PrivateKeyFormat, PublicKeyFormat
 
 BASE_PATH = Path('__file__').resolve().parent / 'trustpoint_client/demo_data'
@@ -77,6 +77,7 @@ def _credential_list(domain: None | str, verbose: bool, unique_name: None | str)
 @domain_option_optional
 @verbose_option
 @click.argument('unique-name', type=str, required=False)
+@handle_exception
 def credential_list(domain: None | str, verbose: bool, unique_name: None | str) -> None:  # noqa: FBT001
     """Lists all or specific credentials.
 
@@ -91,6 +92,7 @@ def credential_list(domain: None | str, verbose: bool, unique_name: None | str) 
 @credentials.command(name='delete')
 @click.option('--domain', '-d', type=str, required=False, help='The desired domain. Defaults to the default domain.')
 @click.argument('unique-name', type=str, required=True)
+@handle_exception
 def credential_delete(domain: None | str, unique_name: str) -> None:
     """Deletes the corresponding credential.
 
@@ -139,6 +141,7 @@ def export() -> None:
 )
 @click.option('--unique-name', '-u', type=str, required=True)
 @click.option('--pkcs12-out', '-o', type=click.Path(), required=True)
+@handle_exception
 def export_credential(domain: None | str, password: None | str, unique_name: str, pkcs12_out: str) -> None:
     """Exports the whole credential as PKCS#12 file.
 
@@ -171,6 +174,7 @@ def export_credential(domain: None | str, password: None | str, unique_name: str
     default=CertificateFormat.PEM.value,
 )
 @click.option('--certificate-out', '-o', type=click.Path(), required=True)
+@handle_exception
 def export_certificate(domain: None | str, unique_name: str, format_out: str, certificate_out: str) -> None:
     """Exports the credential certificate."""
     trustpoint_client = TrustpointClient()
@@ -196,6 +200,7 @@ def export_certificate(domain: None | str, unique_name: str, format_out: str, ce
     default=CertificateCollectionFormat.PEM.value,
 )
 @click.option('--certificate-chain-out', '-o', type=click.Path(), required=True)
+@handle_exception
 def export_certificate_chain(domain: None | str, unique_name: str, format_out: str, certificate_chain_out: str) -> None:
     """Exports the credential certificate-chain."""
     trustpoint_client = TrustpointClient()
@@ -221,6 +226,7 @@ def export_certificate_chain(domain: None | str, unique_name: str, format_out: s
     default=PublicKeyFormat.PEM.value,
 )
 @click.option('--public-key-out', '-o', type=click.Path(), required=True)
+@handle_exception
 def export_public_key(domain: None | str, unique_name: str, format_out: str, public_key_out: str) -> None:
     """Exports the credential public-key."""
     trustpoint_client = TrustpointClient()
@@ -249,6 +255,7 @@ def export_public_key(domain: None | str, unique_name: str, format_out: str, pub
     default=PrivateKeyFormat.PKCS8_PEM.value,
 )
 @click.option('--private-key-out', '-o', type=click.Path(), required=True)
+@handle_exception
 def export_private_key(
     domain: None | str, password: None | str, unique_name: str, format_out: str, private_key_out: str
 ) -> None:
@@ -273,6 +280,7 @@ def export_private_key(
 
 
 @credentials.command
+@handle_exception
 def renew() -> None:
     """Renews a certificate."""
 
@@ -326,6 +334,7 @@ def request() -> None:
 @click.option('--subject-alt-name-dir-name', '-san-dn', type=str, required=False, multiple=True)
 @click.option('--subject-alt-name-other-name', '-san-on', type=str, required=False, multiple=True)
 @click.argument('unique_name', type=str, required=True)
+@handle_exception
 def request_generic(  # noqa: PLR0913
     subject: list[str],
     validity_years: int,
@@ -560,6 +569,7 @@ def request_generic(  # noqa: PLR0913
 
 @request.command(name='tls-client')
 @click.argument('unique_name', type=str, required=True)
+@handle_exception
 def request_tls_client(unique_name: str) -> None:
     """Requests a new TLS-Client credential.
 
@@ -600,6 +610,7 @@ def request_tls_client(unique_name: str) -> None:
 @click.option('--san-ip', '-i', type=str, required=False, multiple=True)
 @click.option('--san-domain', '-d', type=str, required=False, multiple=True)
 @click.argument('unique_name', type=str, required=True)
+@handle_exception
 def request_tls_server(unique_name: str, san_ip: tuple[str], san_domain: tuple[str]) -> None:
     """Requests a new TLS-Server credential.
 

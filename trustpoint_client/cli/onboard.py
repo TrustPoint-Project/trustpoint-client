@@ -12,6 +12,7 @@ from trustpoint_client.api import TrustpointClient
 from trustpoint_client.api.mdns import find_services
 from trustpoint_client.api.schema import PkiProtocol
 from trustpoint_client.api.zero_touch_aoki import aoki_onboarding
+from trustpoint_client.cli import handle_exception
 
 
 def pretty_print_onboarding_results(data: dict[str, str]) -> None:
@@ -38,6 +39,7 @@ def onboard() -> None:
 @click.option('--device', '-d', required=True, type=str, help='The device name.')
 @click.option('--host', '-h', required=True, type=str, help='The domain name or IP address of the trustpoint.')
 @click.option('--port', '-p', required=False, type=int, default=443, help='The port of the trustpoint if not 443.')
+@handle_exception
 def auto(otp: str, device: str, host: str, port: int) -> None:
     """Onboarding using the Trustpoint Client onboarding process."""
     trustpoint_client = TrustpointClient()
@@ -98,6 +100,7 @@ def auto(otp: str, device: str, host: str, port: int) -> None:
 @click.option(
     '--password', '-pw', type=str, default=None, help='The password to decrypt the private key / PKCS#12 file.'
 )
+@handle_exception
 def manual(  # noqa: PLR0913, C901
     host: str,
     port: int,
@@ -172,6 +175,7 @@ def manual(  # noqa: PLR0913, C901
     default=443,
     help='The port of the Trustpoint if not 443. For testing without discovery.',
 )
+@handle_exception
 def zero_touch(host: str, port: int) -> None:
     """Starts the AOKI demo zero-touch onboarding process."""
     try:

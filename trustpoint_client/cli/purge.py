@@ -5,9 +5,11 @@ from __future__ import annotations
 import click
 
 from trustpoint_client.api import purge_working_dir_inventory_and_config
+from trustpoint_client.cli import handle_exception
 
 
 @click.command
+@handle_exception
 def purge() -> None:
     """Purges all data of the Trustpoint Client."""
     if click.confirm(

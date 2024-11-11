@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-import importlib.metadata
-
 import click
 
-try:
-    version_id = importlib.metadata.version('trustpoint_client')
-except Exception as exception:
-    raise click.ClickException(str(exception)) from exception
+from trustpoint_client.cli import handle_exception, version_id
 
 
 @click.command
+@handle_exception
 def version() -> None:
     """Displays the version of Trustpoint-Client."""
     click.echo(f'\n\tTrustpoint Client Version: v{version_id}\n')
