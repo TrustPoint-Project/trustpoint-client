@@ -1,38 +1,47 @@
-import click
-from prettytable import PrettyTable
+"""Trustpoint-Client commands concerning global configurations."""
+
+from __future__ import annotations
+
 from enum import Enum
 
-from trustpoint_client.cli import domain_option_required
+import click
+from prettytable import PrettyTable
+
 from trustpoint_client.api import TrustpointClient
 from trustpoint_client.api.exceptions import DomainDoesNotExist
+from trustpoint_client.cli import domain_option_required
+
 
 @click.group
-def config():
+def config() -> None:
     """Configuration options."""
 
+
 @config.command(name='list')
-def config_list():
+def config_list() -> None:
     """Lists the current configurations."""
     table = PrettyTable()
     table.field_names = ['Setting', 'Value']
     for key, value in TrustpointClient().config_as_dict.items():
-        if value is None:
-            value = ''
-        if isinstance(value, Enum):
-            value = value.value
-        key = str(key)
-        value = str(value)
-        table.add_row([str(key), str(value)])
+        local_value = '' if value is None else value
+        if isinstance(local_value, Enum):
+            local_value = value.value
+        local_key = str(key)
+        local_value = str(local_value)
+        table.add_row([str(local_key), str(local_value)])
     click.echo(f'\n{table}\n')
+
 
 # --------------------------------------------------- Config Getter ----------------------------------------------------
 
+
 @config.group(name='get')
-def config_get():
+def config_get() -> None:
     """Gets the specific configuration field"""
 
+
 @config_get.command(name='default-domain')
-def config_get_default_domain():
+def config_get_default_domain() -> None:
     """Gets the current default trustpoint domain."""
     default_domain = TrustpointClient().default_domain
     if default_domain:
@@ -40,15 +49,18 @@ def config_get_default_domain():
     else:
         click.echo('\n\tNo default domain configured.\n')
 
+
 # --------------------------------------------------- Config Setter ----------------------------------------------------
 
+
 @config.group(name='set')
-def config_set():
+def config_set() -> None:
     """Sets the specific configuration field."""
+
 
 @config_set.command(name='default-domain')
 @domain_option_required
-def config_set_default_domain(domain: str):
+def config_set_default_domain(domain: str) -> None:
     """Sets / overwrites the default trustpoint domain."""
     try:
         TrustpointClient().default_domain = domain
@@ -56,24 +68,28 @@ def config_set_default_domain(domain: str):
     except DomainDoesNotExist as exception:
         click.echo(f'\n{exception}\n')
 
+
 # --------------------------------------------------- Config Clearer ---------------------------------------------------
 
+
 @config.group(name='clear')
-def config_clear():
+def config_clear() -> None:
     """Clears the specific configuration field."""
 
+
 @config_clear.command(name='default-domain')
-def config_clear_default_domain():
+def config_clear_default_domain() -> None:
     """Clears the default trustpoint domain."""
     if TrustpointClient().default_domain is None:
         click.echo('\n\tNo default domain configured. Nothing to clear.\n')
         return
 
     if click.confirm(
-            'Are you sure to clear the default trustpoint domain? '
-            'You will have to explicitly state the domain with every command if no default domain is set.'):
+        'Are you sure to clear the default trustpoint domain? '
+        'You will have to explicitly state the domain with every command if no default domain is set.'
+    ):
         del TrustpointClient().default_domain
-        click.echo(f'\n\tDefault domain cleared.\n')
+        click.echo('\n\tDefault domain cleared.\n')
         return
 
-    click.echo(f'\n\tAborted.\n')
+    click.echo('\n\tAborted.\n')
