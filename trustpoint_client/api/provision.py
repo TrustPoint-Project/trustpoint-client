@@ -1,65 +1,74 @@
+"""Trustpoint-Client Onboarding API."""
 from __future__ import annotations
 
-import requests
 import hashlib
 import hmac
 from pathlib import Path
-import urllib3
 from typing import TYPE_CHECKING
 
+import requests
+import urllib3
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.x509 import oid
-from trustpoint_devid_module.serializer import CredentialSerializer
+
+from trustpoint_client.api.schema import (
+    CertificateType,
+    CredentialModel,
+    DomainConfigModel,
+    DomainModel,
+    PkiProtocol,
+    SignatureSuite,
+)
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Union
+
+    from trustpoint_devid_module.serializer import CredentialSerializer
     from trustpoint_devid_module.service_interface import DevIdModule
 
-from trustpoint_client.api.schema import SignatureSuite, CertificateType
-
-HMAC_SIGNATURE_HTTP_HEADER = 'hmac-signature'
-
-from trustpoint_client.api.schema import PkiProtocol
-from trustpoint_client.api.schema import DomainModel, CredentialModel
-from trustpoint_client.api.schema import DomainConfigModel
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
-from cryptography.hazmat.primitives import hashes
-from cryptography import x509
-from cryptography.hazmat.primitives import serialization
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing import Union
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey]
 
-class TrustpointClientProvision:
+
+HMAC_SIGNATURE_HTTP_HEADER = 'hmac-signature'
+HTTP_STATUS_OK = 200
+
+
+class TrustpointClientOnboardingMixin:
+    """Mixin for the Trustpoint-Client that provides the onboarding features."""
 
     devid_module: DevIdModule
     inventory: property
     default_domain: property
     _store_inventory: callable
 
-    def provision_auto(self, otp: str, device: str, host: str, port: int = 443,
-                       extra_data: dict | None = None) -> dict:
+    def provision_auto(
+        self, otp: str, device: str, host: str, port: int = 443, extra_data: dict | None = None
+    ) -> dict[str, int | str]:
+        """Automatic onboarding using the Trustpoint-Client onboarding method.
 
-        provision_data = {
-            'otp': otp,
-            'device': device,
-            'host': host,
-            'port': port
-        }
+        Args:
+            otp: The required OTP to use in the onboarding process.
+            device: The device name to use in the onboarding process.
+            host: The host name or address (IPv4) of the Trustpoint.
+            port: The port number of the Trustpoint.
+            extra_data: Extra data to pass to the onboarding process.
+        """
+        provision_data = {'otp': otp, 'device': device, 'host': host, 'port': port}
 
-        if extra_data: # trust store and protocol info already provided (e.g. by zero-touch demo)
+        if extra_data:  # trust store and protocol info already provided (e.g. by zero-touch demo)
             try:
                 provision_data['trust-store'] = extra_data['trust-store']
                 provision_data['domain'] = extra_data['domain']
                 provision_data['signature-suite'] = SignatureSuite(extra_data['signature-suite'])
                 provision_data['pki-protocol'] = PkiProtocol(extra_data['pki-protocol'])
-            except KeyError as e:
-                raise ValueError(f'extra_data provided, but does not contain required key {e}.')
+            except KeyError as exception:
+                err_msg = f'extra_data provided, but does not contain required key {exception}.'
+                raise ValueError(err_msg) from exception
         else:
             self._provision_get_trust_store(provision_data=provision_data)
-        tls_trust_store_path = (Path(__file__).parent / Path('tls_trust_store.pem'))
+        tls_trust_store_path = Path(__file__).parent / Path('tls_trust_store.pem')
         tls_trust_store_path.write_text(provision_data['trust-store'])
         provision_data['crypto-key'] = self.generate_new_key(provision_data['signature-suite'])
         self._provision_get_ldevid(provision_data=provision_data, tls_trust_store_path=tls_trust_store_path)
@@ -71,10 +80,10 @@ class TrustpointClientProvision:
         provision_data['ldevid-certificate-type'] = CertificateType.LDEVID
         provision_data['ldevid-not-valid-before'] = loaded_cert.not_valid_before_utc
         provision_data['ldevid-not-valid-after'] = loaded_cert.not_valid_after_utc
-        provision_data['ldevid-expires-in'] = provision_data['ldevid-not-valid-after'] \
-                                              - provision_data['ldevid-not-valid-before']
-        provision_data['serial-number'] = loaded_cert.subject.get_attributes_for_oid(
-            oid.NameOID.SERIAL_NUMBER)[0].value
+        provision_data['ldevid-expires-in'] = (
+            provision_data['ldevid-not-valid-after'] - provision_data['ldevid-not-valid-before']
+        )
+        provision_data['serial-number'] = loaded_cert.subject.get_attributes_for_oid(oid.NameOID.SERIAL_NUMBER)[0].value
 
         self._store_ldevid_in_inventory(provision_data=provision_data)
 
@@ -89,7 +98,7 @@ class TrustpointClientProvision:
             'LDevID Certificate Type': provision_data['ldevid-certificate-type'].value,
             'LDevID Not-Valid-Before': provision_data['ldevid-not-valid-before'],
             'LDevID Not-Valid-After': provision_data['ldevid-not-valid-after'],
-            'LDevID Expires-In': provision_data['ldevid-expires-in']
+            'LDevID Expires-In': provision_data['ldevid-expires-in'],
         }
 
         if result['Host'] == 'localhost':
@@ -108,10 +117,12 @@ class TrustpointClientProvision:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         response = requests.get(
             f'https://{host}:{port}/api/onboarding/trust-store/{url_extension}',
-            verify=False,
-            timeout=10)
-        if not HMAC_SIGNATURE_HTTP_HEADER in response.headers:
-            raise ValueError('HMAC missing in HTTP header.')
+            verify=False,   # noqa: S501
+            timeout=10,
+        )
+        if HMAC_SIGNATURE_HTTP_HEADER not in response.headers:
+            err_msg = 'HMAC missing in HTTP header.'
+            raise ValueError(err_msg)
 
         provision_data['domain'] = response.headers['domain']
         provision_data['signature-suite'] = SignatureSuite(response.headers['signature-suite'])
@@ -121,12 +132,18 @@ class TrustpointClientProvision:
         derived_key = hashlib.pbkdf2_hmac('sha256', otp, salt, pbkdf2_iter, dklen=32)
         calculated_hmac = hmac.new(derived_key, response.content, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(calculated_hmac, response.headers[HMAC_SIGNATURE_HTTP_HEADER]):
-            raise RuntimeError('HMACs do not match.')
+            err_msg = 'HMACs do not match.'
+            raise RuntimeError(err_msg)
 
         provision_data['trust-store'] = response.content.decode()
 
     @staticmethod
     def generate_new_key(signature_suite: SignatureSuite) -> PrivateKey:
+        """Generates a matching keypair for the given signature-suite.
+
+        Args:
+            signature_suite: Signature-suite that determines which type of key to generate.
+        """
         rsa_public_exponent = 65537
         if signature_suite == SignatureSuite.RSA2048:
             return rsa.generate_private_key(public_exponent=rsa_public_exponent, key_size=2048)
@@ -139,7 +156,8 @@ class TrustpointClientProvision:
         if signature_suite == SignatureSuite.SECP384R1:
             return ec.generate_private_key(curve=ec.SECP384R1())
 
-        raise ValueError('Algorithm not supported.')
+        err_msg = 'Algorithm not supported.'
+        raise ValueError(err_msg)
 
     @staticmethod
     def _provision_get_ldevid(provision_data: dict[str, Any], tls_trust_store_path: Path) -> None:
@@ -150,17 +168,12 @@ class TrustpointClientProvision:
         port = provision_data['port']
         key = provision_data['crypto-key']
 
-        if provision_data['signature-suite'] == SignatureSuite.SECP384R1:
-            hash_algo = hashes.SHA384
-        else:
-            hash_algo = hashes.SHA256
+        hash_algo = hashes.SHA384 if provision_data['signature-suite'] == SignatureSuite.SECP384R1 else hashes.SHA256
 
         csr_builder = x509.CertificateSigningRequestBuilder()
         csr_builder = csr_builder.subject_name(
-            x509.Name(
-                [
-                    x509.NameAttribute(
-                        x509.NameOID.COMMON_NAME,'Trustpoint LDevID')]))
+            x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, 'Trustpoint LDevID')])
+        )
         csr = csr_builder.sign(key, hash_algo()).public_bytes(serialization.Encoding.PEM)
 
         # Let Trustpoint sign our CSR (auth via OTP and salt as username via HTTP basic auth)
@@ -171,9 +184,9 @@ class TrustpointClientProvision:
             auth=(salt, otp),
             files=files,
             verify=tls_trust_store_path,
-            timeout=10
+            timeout=10,
         )
-        if ldevid_response.status_code != 200:
+        if ldevid_response.status_code != HTTP_STATUS_OK:
             error_message = 'Server returned HTTP code ' + str(ldevid_response.status_code)
             raise ValueError(error_message)
 
@@ -188,23 +201,21 @@ class TrustpointClientProvision:
         cert_chain = requests.get(
             f'https://{host}:{port}/api/onboarding/ldevid/cert-chain/{url_extension}',
             verify=tls_trust_store_path,
-            # cert=('ldevid.pem', 'ldevid-private-key.pem'),
+            # TODO(AlexHx8472): add proper TLS server verification: cert=('ldevid.pem', 'ldevid-private-key.pem'),
             timeout=10,
         )
-        if cert_chain.status_code != 200:
+        if cert_chain.status_code != HTTP_STATUS_OK:
             exc_msg = 'Server returned HTTP code ' + str(cert_chain.status_code)
             raise ValueError(exc_msg)
 
         provision_data['ldevid-cert-chain'] = cert_chain.content.decode()
 
     def _store_ldevid_in_inventory(self, provision_data: dict[str, Any]) -> None:
-
         ldevid_key_index = self.devid_module.insert_ldevid_key(provision_data['crypto-key'])
         self.devid_module.enable_devid_key(ldevid_key_index)
         ldevid_certificate_index = self.devid_module.insert_ldevid_certificate(provision_data['ldevid'])
         self.devid_module.enable_devid_certificate(ldevid_certificate_index)
-        self.devid_module.insert_ldevid_certificate_chain(
-            ldevid_certificate_index, provision_data['ldevid-cert-chain'])
+        self.devid_module.insert_ldevid_certificate_chain(ldevid_certificate_index, provision_data['ldevid-cert-chain'])
 
         inventory = self.inventory
         ldevid_credential = CredentialModel(
@@ -214,13 +225,10 @@ class TrustpointClientProvision:
             subject=provision_data['ldevid-subject'],
             certificate_type=provision_data['ldevid-certificate-type'],
             not_valid_before=provision_data['ldevid-not-valid-before'],
-            not_valid_after=provision_data['ldevid-not-valid-after']
+            not_valid_after=provision_data['ldevid-not-valid-after'],
         )
 
-        if provision_data['host'] == 'localhost':
-            trustpoint_host = '127.0.0.1'
-        else:
-            trustpoint_host = provision_data['host']
+        trustpoint_host = '127.0.0.1' if provision_data['host'] == 'localhost' else provision_data['host']
 
         domain_config = DomainConfigModel(
             device=provision_data['device'],
@@ -230,7 +238,7 @@ class TrustpointClientProvision:
             trustpoint_port=provision_data['port'],
             signature_suite=provision_data['signature-suite'],
             pki_protocol=provision_data['pki-protocol'],
-            tls_trust_store=provision_data['trust-store']
+            tls_trust_store=provision_data['trust-store'],
         )
 
         inventory.domains[provision_data['domain']] = DomainModel(
@@ -245,12 +253,16 @@ class TrustpointClientProvision:
             self.default_domain = provision_data['domain']
 
     def provision_manual(
-            self,
-            trustpoint_host: str,
-            trustpoint_port: int,
-            pki_protocol: PkiProtocol,
-            credential: CredentialSerializer) -> dict:
+        self, trustpoint_host: str, trustpoint_port: int, pki_protocol: PkiProtocol, credential: CredentialSerializer
+    ) -> dict[str, int | str]:
+        """Onboards the trustpoint-client through importing the LDevID credential as file.
 
+        Args:
+            trustpoint_host: The host name or address (IPv4) of the trustpoint.
+            trustpoint_port: The port number of the trustpoint.
+            pki_protocol: The default pki protocol to use to manage certificates.
+            credential: The credential to be used for provisioning.
+        """
         cert = credential.credential_certificate.as_crypto()
         err_msg = 'Certificate does not seem to be an LDevID issued by a Trustpoint.'
         try:
@@ -264,19 +276,18 @@ class TrustpointClientProvision:
             raise ValueError(err_msg) from exception
 
         if domain in self.inventory.domains:
-            raise ValueError(f'Domain with unique name {domain} already exists.')
+            err_msg = f'Domain with unique name {domain} already exists.'
+            raise ValueError(err_msg)
 
         private_key = credential.credential_private_key.as_crypto()
         cert = credential.credential_certificate.as_crypto()
         cert_chain = credential.additional_certificates.as_crypto()
 
-
         ldevid_key_index = self.devid_module.insert_ldevid_key(private_key)
         self.devid_module.enable_devid_key(ldevid_key_index)
         ldevid_certificate_index = self.devid_module.insert_ldevid_certificate(cert)
         self.devid_module.enable_devid_certificate(ldevid_certificate_index)
-        self.devid_module.insert_ldevid_certificate_chain(
-            ldevid_certificate_index, cert_chain)
+        self.devid_module.insert_ldevid_certificate_chain(ldevid_certificate_index, cert_chain)
 
         inventory = self.inventory
         ldevid_credential = CredentialModel(
@@ -286,7 +297,7 @@ class TrustpointClientProvision:
             subject=cert.subject.rfc4514_string(),
             certificate_type=CertificateType.LDEVID,
             not_valid_before=cert.not_valid_before_utc,
-            not_valid_after=cert.not_valid_after_utc
+            not_valid_after=cert.not_valid_after_utc,
         )
 
         if trustpoint_host == 'localhost':
@@ -300,7 +311,7 @@ class TrustpointClientProvision:
             trustpoint_port=trustpoint_port,
             signature_suite=SignatureSuite.get_signature_suite_by_public_key(cert.public_key()),
             pki_protocol=pki_protocol,
-            tls_trust_store='None'
+            tls_trust_store='None',
         )
 
         inventory.domains[domain] = DomainModel(
@@ -325,5 +336,5 @@ class TrustpointClientProvision:
             'LDevID Certificate Type': CertificateType.LDEVID.value,
             'LDevID Not-Valid-Before': cert.not_valid_before_utc,
             'LDevID Not-Valid-After': cert.not_valid_after_utc,
-            'LDevID Expires-In': cert.not_valid_after_utc - cert.not_valid_before_utc
+            'LDevID Expires-In': cert.not_valid_after_utc - cert.not_valid_before_utc,
         }
