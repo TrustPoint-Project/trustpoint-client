@@ -1,4 +1,4 @@
-"""Command-line interface for the Trustpoint-Client."""
+"""Trustpoint-Client commands concerning onboarding processes."""
 
 from __future__ import annotations
 
