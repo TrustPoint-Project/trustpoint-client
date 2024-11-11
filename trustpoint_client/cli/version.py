@@ -3,8 +3,10 @@ from __future__ import annotations
 import click
 import importlib.metadata
 
-version_id = importlib.metadata.version('trustpoint_client')
-
+try:
+    version_id = importlib.metadata.version('trustpoint_client')
+except Exception as exception:
+    raise click.ClickException(str(exception)) from exception
 
 @click.command
 def version():
