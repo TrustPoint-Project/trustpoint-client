@@ -56,6 +56,7 @@ import click
 import json
 import logging
 import os
+import prettytable
 import requests
 import secrets
 import threading
@@ -137,7 +138,7 @@ def _aoki_onboarding(host: str, port: int = 443):
         return
     
     trustpoint_client = TrustpointClient()
-    trustpoint_client.set_provisioning_state(ProvisioningState.NO_TRUST)
+    #trustpoint_client.set_provisioning_state(ProvisioningState.NO_TRUST)
 
     log.info(f'AOKI onboarding with Trustpoint server at {host} started')
 
@@ -192,7 +193,7 @@ def _aoki_onboarding(host: str, port: int = 443):
     verify_server_signature(response_bytes, ownership_cert=ownership_cert, server_signature=server_signature)
 
     click.echo('Ownership certificate verified!')
-    trustpoint_client.set_provisioning_state(ProvisioningState.ONESIDED_TRUST)
+    # trustpoint_client.set_provisioning_state(ProvisioningState.ONESIDED_TRUST)
     
     # Step 4: If client-side verification is successful, sign server_nonce with IDevID private key and send back to server
     # TODO: Support all DevID conformant signature suites (RSA-2048/SHA-256, ECDSA P-256/SHA-256, ECDSA P-384/SHA-38)
@@ -227,6 +228,7 @@ def _aoki_onboarding(host: str, port: int = 443):
     if response.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(response.status_code)
         log.debug(response.text)
+        print(response.text)
         raise ProvisioningError(exc_msg)
 
     try:
@@ -238,25 +240,29 @@ def _aoki_onboarding(host: str, port: int = 443):
     try:
         otp = response_json['otp']
         device_name = response_json['device']
+
+        zero_touch_provision_data = {
+            'domain': response_json['domain'],
+            'signature-suite': response_json['signature_suite'],
+            'pki-protocol': response_json['pki_protocol'],
+            'trust-store': server_tls_cert
+        }
     except KeyError as e:
         exc_msg = 'Server finalize response JSON is missing required fields.'
         raise ProvisioningError(exc_msg) from e
     
     click.echo('Received OTP from server, proceeding to LDevID enrollment...')
     
-    with open(CERT_PATH / 'idevid_cert.pem', 'rb') as idevid:
-        idevid_cert = x509.load_pem_x509_certificate(idevid.read())
-        try:
-            serial_number = idevid_cert.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
-        except (x509.ExtensionNotFound, IndexError):
-            serial_number = 'tpcl_' + secrets.token_urlsafe(12)
-    
-    provision_data = trustpoint_client.provision_zero_touch(
-        otp=otp, device=device_name, host=host, port=port, trust_store=server_tls_cert
+    result = trustpoint_client.provision_auto(
+        otp=otp, device=device_name, host=host, port=port, extra_data=zero_touch_provision_data
     )
     
-    if provision_data['ldevid']:
-        log.info('Zero-Touch LDevID successfully obtained!')
+    click.echo('\nTrustpoint Client Zero-Touch provisioning successful.\n')
+    table = prettytable.PrettyTable(['Property', 'Value'])
+    table.add_rows([[key.capitalize(), value] for key, value in result.items()])
+    table.align = 'l'
+    click.echo(table)
+    click.echo()
 
 def aoki_onboarding(host: str, port: int = 443):
     """Called for each discovered Trustpoint server to attempt onboarding."""

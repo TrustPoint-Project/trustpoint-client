@@ -38,7 +38,8 @@ class TrustpointClientProvision:
     default_domain: property
     _store_inventory: callable
 
-    def provision_auto(self, otp: str, device: str, host: str, port: int = 443) -> dict:
+    def provision_auto(self, otp: str, device: str, host: str, port: int = 443,
+                       extra_data: dict | None = None) -> dict:
 
         provision_data = {
             'otp': otp,
@@ -47,9 +48,19 @@ class TrustpointClientProvision:
             'port': port
         }
 
-        self._provision_get_trust_store(provision_data=provision_data)
+        if extra_data: # trust store and protocol info already provided (e.g. by zero-touch demo)
+            try:
+                provision_data['trust-store'] = extra_data['trust-store']
+                provision_data['domain'] = extra_data['domain']
+                provision_data['signature-suite'] = SignatureSuite(extra_data['signature-suite'])
+                provision_data['pki-protocol'] = PkiProtocol(extra_data['pki-protocol'])
+            except KeyError as e:
+                raise ValueError(f'extra_data provided, but does not contain required key {e}.')
+        else:
+            self._provision_get_trust_store(provision_data=provision_data)
         tls_trust_store_path = (Path(__file__).parent / Path('tls_trust_store.pem'))
         tls_trust_store_path.write_text(provision_data['trust-store'])
+        provision_data['crypto-key'] = self.generate_new_key(provision_data['signature-suite'])
         self._provision_get_ldevid(provision_data=provision_data, tls_trust_store_path=tls_trust_store_path)
         self._provision_get_ldevid_chain(provision_data=provision_data, tls_trust_store_path=tls_trust_store_path)
         tls_trust_store_path.unlink()
@@ -104,7 +115,6 @@ class TrustpointClientProvision:
         provision_data['domain'] = response.headers['domain']
         provision_data['signature-suite'] = SignatureSuite(response.headers['signature-suite'])
         provision_data['pki-protocol'] = PkiProtocol(response.headers['pki-protocol'])
-        provision_data['crypto-key'] = self.generate_new_key(provision_data['signature-suite'])
 
         pbkdf2_iter = 1000000
         derived_key = hashlib.pbkdf2_hmac('sha256', otp, salt, pbkdf2_iter, dklen=32)
