@@ -164,7 +164,4 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-.pem
-.der
-.p12
-.key
+*.p12
