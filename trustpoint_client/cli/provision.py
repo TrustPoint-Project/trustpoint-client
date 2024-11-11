@@ -98,7 +98,7 @@ def auto(otp: str, device: str, host: str, port: int) -> None:
 @click.option(
     '--password', '-pw', type=str, default=None, help='The password to decrypt the private key / PKCS#12 file.'
 )
-def manual(     # noqa: PLR0913, C901
+def manual(  # noqa: PLR0913, C901
     host: str,
     port: int,
     pki_protocol: str,
@@ -144,7 +144,6 @@ def manual(     # noqa: PLR0913, C901
                 raise click.ClickException(err_msg) from exception
     except Exception as exception:
         raise click.ClickException(str(exception)) from exception
-
 
     try:
         pki_protocol = PkiProtocol(pki_protocol.upper())
