@@ -42,13 +42,13 @@ def auto(otp: str, device: str, host: str, port: int) -> None:
     """Provisioning using the Trustpoint Client onboarding process."""
     trustpoint_client = TrustpointClient()
 
-    if not port:
-        port = 443
-    if ':' in host:
-        host, port = host.split(':')
-    port = int(port)
-
     try:
+        if not port:
+            port = 443
+        if ':' in host:
+            host, port = host.split(':')
+        port = int(port)
+
         result = trustpoint_client.provision_auto(otp, device, host, port)
     except Exception as exception:
         raise click.ClickException(str(exception)) from exception
@@ -111,36 +111,40 @@ def manual(     # noqa: PLR0913, C901
     """Creates a domain and injects the domain credential from file."""
     trustpoint_client = TrustpointClient()
 
-    if not port:
-        port = 443
-    if ':' in host:
-        host, port = host.split(':')
-    port = int(port)
+    try:
+        if not port:
+            port = 443
+        if ':' in host:
+            host, port = host.split(':')
+        port = int(port)
 
-    if domain_credential_pkcs12:
-        domain_credential_pkcs12 = Path(domain_credential_pkcs12).read_bytes()
-        try:
-            credential = CredentialSerializer(domain_credential_pkcs12, password=password)
-        except Exception as exception:
-            err_msg = 'Failed to parse the PKCS#12 file. Either malformed or wrong password.'
-            raise click.ClickException(err_msg) from exception
-    else:
-        if domain_credential_certificate:
-            domain_credential_certificate = Path(domain_credential_certificate).read_bytes()
-        if domain_credential_certificate_chain:
-            domain_credential_certificate_chain = Path(domain_credential_certificate_chain).read_bytes()
-        if domain_credential_private_key:
-            domain_credential_private_key = Path(domain_credential_private_key).read_bytes()
-        if password:
-            password = password.encode()
-        try:
-            credential = CredentialSerializer(
-                (domain_credential_private_key, domain_credential_certificate, domain_credential_certificate_chain),
-                password=password,
-            )
-        except Exception as exception:
-            err_msg = 'Failed to parse given credential. Either malformed or wrong password.'
-            raise click.ClickException(err_msg) from exception
+        if domain_credential_pkcs12:
+            domain_credential_pkcs12 = Path(domain_credential_pkcs12).read_bytes()
+            try:
+                credential = CredentialSerializer(domain_credential_pkcs12, password=password)
+            except Exception as exception:
+                err_msg = 'Failed to parse the PKCS#12 file. Either malformed or wrong password.'
+                raise click.ClickException(err_msg) from exception
+        else:
+            if domain_credential_certificate:
+                domain_credential_certificate = Path(domain_credential_certificate).read_bytes()
+            if domain_credential_certificate_chain:
+                domain_credential_certificate_chain = Path(domain_credential_certificate_chain).read_bytes()
+            if domain_credential_private_key:
+                domain_credential_private_key = Path(domain_credential_private_key).read_bytes()
+            if password:
+                password = password.encode()
+            try:
+                credential = CredentialSerializer(
+                    (domain_credential_private_key, domain_credential_certificate, domain_credential_certificate_chain),
+                    password=password,
+                )
+            except Exception as exception:
+                err_msg = 'Failed to parse given credential. Either malformed or wrong password.'
+                raise click.ClickException(err_msg) from exception
+    except Exception as exception:
+        raise click.ClickException(str(exception)) from exception
+
 
     try:
         pki_protocol = PkiProtocol(pki_protocol.upper())
@@ -171,14 +175,17 @@ def manual(     # noqa: PLR0913, C901
 )
 def zero_touch(host: str, port: int) -> None:
     """Starts the AOKI demo zero-touch onboarding process."""
-    # regular zero-touch onboarding with mDNS discovery
-    if host is None:
-        find_services(zero_touch=True)
-        return
+    try:
+        # regular zero-touch onboarding with mDNS discovery
+        if host is None:
+            find_services(zero_touch=True)
+            return
 
-    # check if host contains a port
-    if ':' in host:
-        host, port = host.split(':')
-        port = int(port)
+        # check if host contains a port
+        if ':' in host:
+            host, port = host.split(':')
+            port = int(port)
 
-    aoki_onboarding(host, port)
+        aoki_onboarding(host, port)
+    except Exception as exception:
+        raise click.ClickException(str(exception)) from exception
