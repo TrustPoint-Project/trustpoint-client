@@ -1,3 +1,7 @@
+"""Trustpoint-Client CLI Package."""
+
+from __future__ import annotations
+
 import os
 from pathlib import Path
 
@@ -7,45 +11,53 @@ from trustpoint_client.cli.version import version_id
 
 CLI_DIRECTORY = str(Path(__file__).resolve().parent)
 
-domain_option_required = click.option(
-    '--domain', '-d',
-    type=str,
-    required=True,
-    help='Handle of the desired domain.')
-domain_option_optional = click.option(
-    '--domain', '-d',
-    type=str,
-    required=False,
-    help='Handle of the desired domain.')
-verbose_option = click.option('--verbose', '-v', is_flag=True, required=False, default=False, help='Enable verbose mode.')
+domain_option_required = click.option('--domain', '-d', type=str, required=True, help='Handle of the desired domain.')
+domain_option_optional = click.option('--domain', '-d', type=str, required=False, help='Handle of the desired domain.')
+verbose_option = click.option(
+    '--verbose', '-v', is_flag=True, required=False, default=False, help='Enable verbose mode.'
+)
+
 
 class TrustPointClientCli(click.MultiCommand):
+    """Abstraction of the TrustPointClientCli program.
 
-    def list_commands(self, ctx: click.core.Context) -> list[str]:
-        command_list =  [
-            filename[:-3].replace('_', '-') for filename in os.listdir(CLI_DIRECTORY)
+    Compare with Python Click documentation.
+    """
+
+    def list_commands(self, ctx: click.core.Context) -> list[str]:  # noqa: ARG002
+        """Lists the commands.
+
+        Compare with Python Click documentation.
+        """
+        command_list = [
+            filename[:-3].replace('_', '-')
+            for filename in os.listdir(CLI_DIRECTORY)
             if filename.endswith('.py') and filename not in ['__init__.py', 'decorator.py']
         ]
         return sorted(command_list)
 
     def get_command(self, ctx: click.core.Context, name: str) -> dict:
+        """Gets a command.
+
+        Compare with Python Click documentation.
+        """
         ns = {}
         if name not in self.list_commands(ctx):
-            # TODO(AlexHx8472)
-            raise ValueError(f'\n\tCommand \'{name}\' does not exist.\n')
+            err_msg = f"\n\tCommand '{name}' does not exist.\n"
+            raise ValueError(err_msg)
         name = name.replace('-', '_')
         fn = Path(CLI_DIRECTORY + '/' + name + '.py')
         with fn.open() as f:
             code_object = compile(f.read(), fn, 'exec')
-            eval(code_object, ns, ns)
+            # TODO(AlexHx8472): Investigate if the call of eval may be a security issue in this case specifically.
+            eval(code_object, ns, ns)  # noqa: S307
         if name == 'list':
             return ns['list_']
         if name == 'del':
             return ns['del_']
         if name == 'domain':
             return ns['domain_']
-        else:
-            return ns[name]
+        return ns[name]
 
 
 TRUSTPOINT_LOGO = r"""
@@ -71,10 +83,10 @@ def draw_ascii_logo() -> None:
     """Draws the Trustpoint ASCII logo."""
     click.echo(TRUSTPOINT_LOGO)
 
+
 def draw_tp_client_description() -> None:
     """Draws the Trustpoint client description."""
     click.echo(f'\nWelcome to the Trustpoint Client Certificate Manager (tp-crt-mgr) - v{version_id}!')
-    # draw_ascii_logo()
     click.echo('')
 
 
