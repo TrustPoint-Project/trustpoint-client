@@ -17,12 +17,31 @@ Installation using pip or pipx
     pipx install trustpoint-client
 
 
-Alternatives depending on the OS and environment:
+Alternatives using PIP depending on the OS and environment:
 
 .. code-block:: bash
 
     pip install trustpoint-client
     pip3 install trustpoint-client
+
+
+Cloning the repository
+~~~~~~~~~~~~~~~~~~~~~~
+
+If you would like to instead clone the repository, you can use the following
+
+.. code-block:: bash
+
+    git clone https://github.com/TrustPoint-Project/trustpoint-client.git
+
+
+In this case you will not have 'trustpoint-client' available as 'installed' application.
+Thus, to use the Trustpoint-Client, start and use it as module.
+
+.. code-block:: bash
+
+    python -m trustpoint-client
+    python3 -m trustpoint-client
 
 
 Check the installation
