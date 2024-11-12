@@ -45,3 +45,5 @@ plantuml = f'java -jar {PLANTUML_PATH}'
 
 autodoc_member_order = 'bysource'
 
+html_favicon = '_static/favicon-32.png'
+

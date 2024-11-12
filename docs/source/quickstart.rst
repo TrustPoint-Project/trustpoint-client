@@ -3,14 +3,23 @@ Quickstart
 
 This guide describes how to install the Trustpoint-Client and utilize it to request the first application certificate.
 
+|
+
 Installation
 ------------
 
-We recommend using pip (or pipx) to install the Trustpoint-Client.
-For other methods, please refer to the detailed `installation section <https://trustpoint.readthedocs.io/en/latest/>`_.
+We recommend using pipx (or pip) to install the Trustpoint-Client.
 
-Installation using pip or pipx
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+System Requirements
+...................
+
+To install and use the Trustpoint-Client you will need at least the following.
+
+    - python >= 3.10
+    - pipx / pip
+
+Installation using pipx or pip
+..............................
 
 .. code-block:: bash
 
@@ -24,25 +33,22 @@ Alternatives using PIP depending on the OS and environment:
     pip install trustpoint-client
     pip3 install trustpoint-client
 
+.. note::
 
-Cloning the repository
-~~~~~~~~~~~~~~~~~~~~~~
+    If you would like to rather clone the GIT repository, maybe to use try the latest changes on main,
+    pleaser refer to the README.md in the corresponding repository:
 
-If you would like to instead clone the repository, you can use the following
+    - `Trustpoint-Client <https://github.com/TrustPoint-Project/trustpoint-client>`_.
+    - `Trustpoint-DevID-Module <https://github.com/TrustPoint-Project/trustpoint-devid-module>`_.
 
-.. code-block:: bash
+    You will require to use the Trustpoint-Client as python package using one of the following
 
-    git clone https://github.com/TrustPoint-Project/trustpoint-client.git
+    .. code-block:: bash
 
+        python -m trustpoint-client
+        python3 -m trustpoint-client
 
-In this case you will not have 'trustpoint-client' available as 'installed' application.
-Thus, to use the Trustpoint-Client, start and use it as module.
-
-.. code-block:: bash
-
-    python -m trustpoint-client
-    python3 -m trustpoint-client
-
+|
 
 Check the installation
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -58,6 +64,7 @@ The trustpoint-devid-module is responsible for handling and storing certificates
 as described IEEE 802.1 AR DevIDModule. This command should usually not be needed or be used. The Trustpoint-Client
 wraps this library and provides higher level functions and features.
 
+|
 
 Onboarding the device
 ~~~~~~~~~~~~~~~~~~~~~
