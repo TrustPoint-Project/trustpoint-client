@@ -15,6 +15,7 @@ platformdirs = "^4.3.6"
 requests = "^2.32.3"
 cryptography = "^43.0.3"
 trustpoint-devid-module = "^0.0.7"
+sphinx-click = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core"]

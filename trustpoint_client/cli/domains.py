@@ -135,9 +135,10 @@ def domain_config_get() -> None:
 def domain_config_get_host(domain: str) -> None:
     """Gets the host name or address (IPv4) of the Trustpoint for the domain.
 
+    \b
     Args:
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:
@@ -158,9 +159,10 @@ def domain_config_get_host(domain: str) -> None:
 def domain_config_get_port(domain: str) -> None:
     """Gets the port number of the Trustpoint for the domain.
 
+    \b
     Args:
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:
@@ -181,9 +183,10 @@ def domain_config_get_port(domain: str) -> None:
 def domain_config_get_signature_suite(domain: str) -> None:
     """Gets the signature-suite used by the domain.
 
+    \b
     Args:
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:
@@ -204,9 +207,10 @@ def domain_config_get_signature_suite(domain: str) -> None:
 def domain_config_get_pki_protocol(domain: str) -> None:
     """Gets the default PKI-protocol for the domain.
 
+    \b
     Args:
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:
@@ -227,9 +231,10 @@ def domain_config_get_pki_protocol(domain: str) -> None:
 def domain_config_get_tls_trust_store(domain: str) -> None:
     """Gets the TLS Trust Store for the domain.
 
+    \b
     Args:
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:
@@ -256,10 +261,11 @@ def domain_config_set() -> None:
 def domain_config_set_host(host: str, domain: str) -> None:
     """Sets the host name or address (IPv4) of the Trustpoint for the domain.
 
+    \b
     Args:
         host: The host name or address (IPv4) of the Trustpoint for the domain.
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:
@@ -277,10 +283,11 @@ def domain_config_set_host(host: str, domain: str) -> None:
 def domain_config_set_port(port: int, domain: str) -> None:
     """Sets the port number of the Trustpoint for the domain.
 
+    \b
     Args:
         port: The port number of the Trustpoint for the domain.
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:
@@ -298,10 +305,11 @@ def domain_config_set_port(port: int, domain: str) -> None:
 def domain_config_set_pki_protocol(pki_protocol: str, domain: str) -> None:
     """Sets the default PKI-protocol for the domain.
 
+    \b
     Args:
         pki_protocol: The PKI-protocol to set.
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
     pki_protocol = pki_protocol.upper()
 
@@ -320,10 +328,11 @@ def domain_config_set_pki_protocol(pki_protocol: str, domain: str) -> None:
 def domain_config_set_tls_trust_store(tls_trust_store: str, domain: str) -> None:
     """Set the TLS Trust Store for the domain.
 
+    \b
     Args:
         tls_trust_store: The TLS Trust Store file path.
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     err_msg = 'Trust-Store config not yet implemented.'
     raise NotImplementedError(err_msg)
 
@@ -339,9 +348,10 @@ def domain_config_clear() -> None:
 def domain_config_clear_host(domain: str) -> None:
     """Clears (deletes) the host name or address (IPv4) of the Trustpoint for the domain.
 
+    \b
     Args:
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:
@@ -358,9 +368,10 @@ def domain_config_clear_host(domain: str) -> None:
 def domain_config_clear_port(domain: str) -> None:
     """Clears (deletes) the port number of the Trustpoint for the domain.
 
+    \b
     Args:
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:
@@ -377,9 +388,10 @@ def domain_config_clear_port(domain: str) -> None:
 def domain_config_clear_pki_protocol(domain: str) -> None:
     """Clears (deletes) the default PKI-protocol for the domain.
 
+    \b
     Args:
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:
@@ -396,9 +408,10 @@ def domain_config_clear_pki_protocol(domain: str) -> None:
 def domain_config_clear_tls_trust_store(domain: str) -> None:
     """Clears (deletes) the TLS Trust Store for the domain.
 
+    \b
     Args:
         domain: The unique name of the domain.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
 
     try:

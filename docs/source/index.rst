@@ -8,6 +8,12 @@
 Trustpoint-Client Documentation
 ===============================
 
+.. Warning::
+
+   Trustpoint is currently in an early technology preview (beta) state. Do not use it in production.
+
+|
+
 The Trustpoint-Client is intended to simplify device onboarding, certificate requests and certificate management
 while using the Trustpoint as a Registration Authority (RA) or a Certificate Authority (CA).
 
@@ -26,6 +32,7 @@ Contents
 
    Home<self>
    Quickstart<quickstart>
+   Commands<commands>
 
 |
 
@@ -152,3 +159,6 @@ For more context and information about the Trustpoint and how to set it up, plea
 
 .. image:: _static/trustpoint-client.drawio.svg
    :align: center
+
+
+

@@ -81,11 +81,13 @@ def _credential_list(domain: None | str, verbose: bool, unique_name: None | str)
 def credential_list(domain: None | str, verbose: bool, unique_name: None | str) -> None:  # noqa: FBT001
     """Lists all or specific credentials.
 
+    \b
     Args:
         domain: The domain in which the credential resides in.
         unique_name: The unique name of the credential to list.
         verbose: If True, the credential in PEM format is also echoed to the CLI (stdout).
-    """
+
+    """     # noqa: D301
     _credential_list(domain, verbose, unique_name)
 
 
@@ -96,13 +98,16 @@ def credential_list(domain: None | str, verbose: bool, unique_name: None | str) 
 def credential_delete(domain: None | str, unique_name: str) -> None:
     """Deletes the corresponding credential.
 
+    \b
     Note:
         Does not yet try to revoke these certificates. (Planned feature)
 
+    \b
     Args:
         domain: The domain in which the credential resides in.
         unique_name: The unique name of the credential to delete.
-    """
+
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
     if not domain:
         domain = trustpoint_client.default_domain
@@ -145,8 +150,9 @@ def export() -> None:
 def export_credential(domain: None | str, password: None | str, unique_name: str, pkcs12_out: str) -> None:
     """Exports the whole credential as PKCS#12 file.
 
+    \b
     If no password is provided, a new password with 12 characters will be generated and be echoed to the terminal.
-    """
+    """     # noqa: D301
     trustpoint_client = TrustpointClient()
     if isinstance(password, str):
         password = password.encode()
@@ -469,7 +475,7 @@ def request_generic(  # noqa: PLR0913
     \b
 
     Examples:
-            ---------
+        ---------
     \b
                 Setting the Key Usage extension to critical and digitalSignature and keyEncipherment to true,
                 everything else shall be false. The following options are equivalent.
@@ -573,9 +579,10 @@ def request_generic(  # noqa: PLR0913
 def request_tls_client(unique_name: str) -> None:
     """Requests a new TLS-Client credential.
 
+    \b
     Args:
         unique_name: Unique name (handle) to use for the new credential.
-    """
+    """ # noqa: D301
     try:
         trustpoint_client = TrustpointClient()
 
@@ -614,11 +621,12 @@ def request_tls_client(unique_name: str) -> None:
 def request_tls_server(unique_name: str, san_ip: tuple[str], san_domain: tuple[str]) -> None:
     """Requests a new TLS-Server credential.
 
+    \b
     Args:
         unique_name: Unique name (handle) to use for the new credential.
         san_ip: IPv4 / IPv6 addresses to use in the subject alternative name of the new TLS-Server certificate.
         san_domain: Domain names to use in the subject alternative name of the new TLS-Server certificate.
-    """
+    """     # noqa: D301
     if not san_ip and not san_domain:
         err_msg = 'At least one SAN IP or SAN DNS-Domain must be specified.'
         raise click.ClickException(err_msg)

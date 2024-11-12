@@ -789,10 +789,9 @@ class TrustpointClientCredential:
             f'-days {validity_days} '
             f'{cmp_ext_cmd_option}'
         )
-        # print(cmd)
 
         try:
-            subprocess.run(cmd, shell=True, stderr=subprocess.STDOUT)
+            subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError as exception_:
             raise ValueError(f'CMP request failed.')
 

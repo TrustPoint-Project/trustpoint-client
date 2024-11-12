@@ -8,6 +8,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.abspath('../../trustpoint_client'))
+sys.path.insert(0, os.path.abspath('../../trustpoint_client/cli'))
+print(sys.path)
 
 PLANTUML_PATH = Path(__file__).parent.absolute() / Path('plantuml-mit-1.2024.6.jar')
 
@@ -27,7 +29,8 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.napoleon',
     'sphinxcontrib.plantuml',
-    'sphinx.ext.autosummary'
+    'sphinx.ext.autosummary',
+    'sphinx_click'
 ]
 
 templates_path = ['_templates']

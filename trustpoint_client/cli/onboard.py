@@ -18,9 +18,10 @@ from trustpoint_client.cli import handle_exception
 def pretty_print_onboarding_results(data: dict[str, str]) -> None:
     """Echoes the results as PrettyTable to CLI (stdout).
 
+    \b
     Args:
         data: Onboarding results.
-    """
+    """     # noqa: D301
     click.echo('\nTrustpoint Client successfully onboarded.\n')
     table = prettytable.PrettyTable(['Property', 'Value'])
     table.add_rows([[key.capitalize(), value] for key, value in data.items()])
