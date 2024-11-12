@@ -21,14 +21,14 @@ To install and use the Trustpoint-Client you will need at least the following.
 Installation using pipx or pip
 ..............................
 
-.. code-block:: bash
+.. code-block:: text
 
     pipx install trustpoint-client
 
 
 Alternatives using PIP depending on the OS and environment:
 
-.. code-block:: bash
+.. code-block:: text
 
     pip install trustpoint-client
     pip3 install trustpoint-client
@@ -43,7 +43,7 @@ Alternatives using PIP depending on the OS and environment:
 
     You will require to use the Trustpoint-Client as python package using one of the following
 
-    .. code-block:: bash
+    .. code-block:: text
 
         python -m trustpoint-client
         python3 -m trustpoint-client
@@ -55,7 +55,7 @@ Check the installation
 
 Two new commands should now be available:
 
-.. code-block:: bash
+.. code-block:: text
 
     trustpoint-devid-module
     trustpoint-client
@@ -126,7 +126,7 @@ We choose some unique names (handles) to refer to those certificates in the futu
 
 Now, to request a TlS-Client certificate we can use the following command:
 
-.. code-block:: bash
+.. code-block:: text
 
     trustpoint-client credentials request tls-client my-new-tls-client-cert
 
@@ -140,7 +140,7 @@ This should result in output like the following:
 
 And we will also request our TLS-Server credential.
 
-.. code-block:: bash
+.. code-block:: text
 
     trustpoint-client credentials request tls-server --san-ip 192.168.5.1 --san-domain test.trustpoint.org my-new-tls-server-cert
 
@@ -156,7 +156,7 @@ encoding certificate, certificate chain and public key.
 
 |
 
-.. code-block:: bash
+.. code-block:: text
 
     trustpoint-client credentials list credential my-tls-client-cert -v
 
@@ -166,11 +166,11 @@ To actually use the credential, currently the only option is to export the crede
 will store the credential in the given file path (--pkcs12-out, -o). If no password is provided, it will automatically
 generate a secure password and echo it to stdout.
 
-.. code-block:: bash
+.. code-block:: text
 
     trustpoint-client credentials export credential -u my-tls-client-cert -o my-tls-client-cert.p12
 
-.. code-block:: bash
+.. code-block:: text
 
     trustpoint-client credentials export credential -u my-tls-server-cert -o my-tls-server-cert.p12
 
@@ -179,7 +179,7 @@ generate a secure password and echo it to stdout.
 It is also possible to only export the certificate, certificate chain, private and/or public key separately
 in different formats. Use the --help flag to discover all possible options:
 
-.. code-block:: bash
+.. code-block:: text
 
     trustpoint-client credentials export --help
 
