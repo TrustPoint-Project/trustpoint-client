@@ -10,7 +10,7 @@ Trustpoint-Client Documentation
 
 .. Warning::
 
-   Trustpoint is currently in an early technology preview (beta) state. Do not use it in production.
+   Trustpoint is currently in a technology preview (beta) state. Do not use it in production.
 
 |
 

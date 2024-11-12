@@ -8,7 +8,7 @@
 </p>
 
 > [!CAUTION]
-> Trustpoint Client is currently in an **early technology preview** (alpha) state. Do not use it in production.
+> Trustpoint Client is currently in a **technology preview** (beta) state. Do not use it in production.
 
 ## What is Trustpoint Client?
 
@@ -18,38 +18,14 @@ All you need is a command line interface on your device, and a recent version of
 > [!WARNING]
 > Please only onboard devices to your network you are sure you can trust.
 
-## Installation
+## Documentation and Installation Instructions.
 
-### Method 1: Directly from Trustpoint (TBD)
+Please see the full [Trustpoint-Client Documentation](https://trustpoint-client.readthedocs.io/en/latest/) for 
+further details and installation instructions.
 
-Just download the package from Trustpoint during onboarding and transfer it to the device, e.g. via SCP or a USB drive.
+There is also a [Quickstart-Guide](https://trustpoint-client.readthedocs.io/en/latest/quickstart.html) as an 
+introduction to the Trustpoint-Client.
 
-### Method 2: From GitHub
-
-1. Clone git repo: https://github.com/TrustPoint-Project/trustpoint-client
-2. Change into the trustpoint-client directory
-   ```shell
-   cd trustpoint-client
-   ```
-3. Install virtual environment and required dependencies
-    ```shell
-   sudo apt install python3-venv
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-4. Set environment variabels
-   ```export TRUSTPOINT_CLIENT_DIR=~/.local/trustpoint/client
-   ```
-   Permanent setting
-   ```echo "export TRUSTPOINT_CLIENT_DIR=~/.local/trustpoint/client" >> ~/.bashrc
-   ```
-5. Execute program
-   Trustpoint will generate and display the exact command for you during the onboarding process.
-
-   Note that trustpoint_client executed below is the directory (as package), not the trustpoint_client.py file
-   ```shell
-   python3 -m trustpoint_client
-   python3 -m trustpoint_client onboard --otp abc --salt fgh --url xyz
-   ```
+For details about the Trustpoint and how to set it up, please see the 
+[Trustpoint Repository](https://github.com/TrustPoint-Project/trustpoint) and the
+[Trustpoint Documentation](https://trustpoint.readthedocs.io/en/latest/).
