@@ -8,7 +8,7 @@ from pathlib import Path
 import click
 import prettytable
 
-from trustpoint_client.api import TrustpointClient
+from trustpoint_client.api.trustpoint import TrustpointClient
 from trustpoint_client.api.credentials import (
     AuthorityKeyIdentifier,
     BasicConstraintsExtension,
@@ -25,7 +25,7 @@ BASE_PATH = Path('__file__').resolve().parent / 'trustpoint_client/demo_data'
 
 @click.group(name='credential')
 def credentials() -> None:
-    """Commands concerning domains."""
+    """Commands concerning credentials."""
 
 
 def _credential_list(domain: None | str, verbose: bool, unique_name: None | str) -> None:  # noqa: FBT001

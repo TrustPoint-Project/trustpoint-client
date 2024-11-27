@@ -8,7 +8,7 @@ import click
 import prettytable
 from trustpoint_devid_module.serializer import CredentialSerializer
 
-from trustpoint_client.api import TrustpointClient
+from trustpoint_client.api.trustpoint import TrustpointClient
 from trustpoint_client.api.mdns import find_services
 from trustpoint_client.api.schema import PkiProtocol
 from trustpoint_client.api.zero_touch_aoki import aoki_onboarding

@@ -4,6 +4,7 @@ import enum
 from pydantic import BaseModel, ConfigDict
 import datetime
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
+from cryptography.hazmat.primitives import hashes
 
 
 class SignatureSuite(enum.Enum):
@@ -35,6 +36,34 @@ class SignatureSuite(enum.Enum):
 
         raise ValueError
 
+    def get_hash_algorithm(self) -> hashes.SHA256 | hashes.SHA384:
+        """Returns the corresponding hash algorithm.
+
+        SHA384 if for the SECP384R1 curve, SHA256 otherwise..
+        """
+        if self.name == 'SECP384R1':
+            return hashes.SHA384()
+        return hashes.SHA256()
+
+    @staticmethod
+    def _generate_rsa_key(key_size: int) -> rsa.RSAPrivateKey:
+        return rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=key_size,
+        )
+
+    def get_new_private_key(self) -> rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey:
+        """Generates and returns a new corresponding private key."""
+        if self.name == 'RSA2048':
+            return self._generate_rsa_key(2048)
+        if self.name == 'RSA3072':
+            return self._generate_rsa_key(3072)
+        if self.name == 'RSA4096':
+            return self._generate_rsa_key(4096)
+        if self.name == 'SECP256R1':
+            return ec.generate_private_key(ec.SECP256R1())
+        return ec.generate_private_key(ec.SECP384R1())
+
 
 class PkiProtocol(enum.Enum):
 
@@ -46,6 +75,7 @@ class PkiProtocol(enum.Enum):
 
 class CertificateType(enum.Enum):
 
+    IDEVID = 'IDevID'
     LDEVID = 'LDevID'
     GENERIC = 'Generic'
     TLS_CLIENT = 'TLS Client Certificate'
@@ -105,3 +135,43 @@ class InventoryModel(BaseModel):
     model_config = ConfigDict(strict=True, extra='forbid')
 
     domains: dict[str, DomainModel] = ...
+
+
+class IdevIdHierarchyInventory(BaseModel):
+    """Hierarchy for IDevIDs."""
+    model_config = ConfigDict(strict=True, extra='forbid')
+
+    idevid_hierarchies: dict[str, IdevIdHierarchy] = ...
+
+
+class IdevIdHierarchy(BaseModel):
+    """IDevID CA Credential."""
+    model_config = ConfigDict(strict=True, extra='forbid')
+
+    signature_suite: SignatureSuite = ...
+    idevid_root_ca_certificate: str = ...
+    idevid_root_ca_private_key: str = ...
+    idevid_issuing_ca_certificate: str = ...
+    idevid_issuing_ca_private_key: str = ...
+    idevid_certificate_chain: str = ...
+    idevids: set[str] = ...
+
+
+class IdevIdCredential(BaseModel):
+    """IDevID Credential."""
+    model_config = ConfigDict(strict=True, extra='forbid')
+
+    unique_name: str = ...
+    certificate_index: int = ...
+    key_index: int = ...
+    serial_number: str = ...
+    not_valid_before: datetime.datetime = ...
+    not_valid_after: datetime.datetime = ...
+    idevid_hierarchy: None | str = ...
+
+
+class IdevIdInventory(BaseModel):
+    """IDevID Credential Inventory."""
+    model_config = ConfigDict(strict=True, extra='forbid')
+
+    idevids: dict[str, IdevIdCredential] = ...
