@@ -99,9 +99,9 @@ def verify_ownership_cert(ownership_cert: bytes) -> bool:
         # CRLF to LF if necessary
         truststore_data = truststore_data.replace(b'\r\n', b'\n')
         ownership_cert = ownership_cert.replace(b'\r\n', b'\n')
-        print(ownership_cert)
-        print('/////')
-        print(truststore_data)
+        log.debug(ownership_cert)
+        log.debug('/////')
+        log.debug(truststore_data)
         if ownership_cert not in truststore_data:
             exc_msg = 'Server ownership certificate is not part of the client trust store.'
             raise OnboardingError(exc_msg)
@@ -118,12 +118,13 @@ def verify_server_signature(message: bytes, ownership_cert: bytes, server_signat
     try:
         cert = x509.load_pem_x509_certificate(ownership_cert)
         signer_public_key = cert.public_key()
-        print(f'Signer public key: {signer_public_key.public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()}')
+        log.debug(f'Signer public key: {signer_public_key.public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()}')
     except Exception as e:
         exc_msg = 'Failed to load public key from ownership certificate.'
         raise OnboardingError(exc_msg) from e
     try:
-        print(f'Server signature: {server_signature}')
+        log.debug(f'Server signature: {server_signature.hex()}')
+        # TODO (Air): Adapt to used signature suite
         signer_public_key.verify(signature=server_signature, data=message, signature_algorithm=ec.ECDSA(hashes.SHA256()))
     except InvalidSignature as e:
         exc_msg = 'Server signature verification failed.'
@@ -132,6 +133,7 @@ def verify_server_signature(message: bytes, ownership_cert: bytes, server_signat
 
 def _aoki_onboarding(host: str, port: int = 443):
     """Called for each discovered Trustpoint server to attempt onboarding."""
+    log.setLevel(logging.DEBUG)
     # Use threading to handle multiple servers (but only run one onboarding process at a time)
     if os.path.exists('ldevid.pem'):
         log.info('LDevID already exists, aborting onboarding.')
@@ -202,10 +204,10 @@ def _aoki_onboarding(host: str, port: int = 443):
         tls_truststore.write(server_tls_cert)
 
     click.echo('Sending finalization request...')
-    print('Nonce to sign:', server_nonce)
+    log.debug('Nonce to sign:', server_nonce)
     fin_data = {'server_nonce': server_nonce.decode('utf-8')}
     fin_str = json.dumps(fin_data,separators=(',', ':'))
-    print(fin_str)
+    log.debug(fin_str)
     fin_bytes = fin_str.encode()
 
     hash = hashes.Hash(hashes.SHA256())
@@ -217,7 +219,7 @@ def _aoki_onboarding(host: str, port: int = 443):
         signature = idevid_private_key.sign(fin_bytes, ec.ECDSA(hashes.SHA256()))
         headers = {'aoki-client-signature': base64.b64encode(signature)}
         
-    print('Client Signature:', signature)
+    log.debug('Client Signature:', signature)
     tls_server_cert_path = CERT_PATH / 'tls_trust_store.pem'
     response = requests.post('https://' + host + ':' + str(port) + '/api/onboarding/aoki/finalize',
                              json=fin_data, verify=tls_server_cert_path, timeout=6, headers=headers)
@@ -228,7 +230,6 @@ def _aoki_onboarding(host: str, port: int = 443):
     if response.status_code != HTTP_STATUS_OK:
         exc_msg = 'Server returned HTTP code ' + str(response.status_code)
         log.debug(response.text)
-        print(response.text)
         raise OnboardingError(exc_msg)
 
     try:
