@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from trustpoint_client.api.schema import SignatureSuite, PkiProtocol
 from trustpoint_devid_module.cli import DevIdModule
-from trustpoint_client.api import TrustpointClientConfigModel
+from trustpoint_client.api.trustpoint import TrustpointClientConfigModel
 from trustpoint_client.api.schema import CredentialModel, InventoryModel
 
 

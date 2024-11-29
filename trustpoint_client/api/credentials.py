@@ -518,7 +518,7 @@ class TrustpointClientCredential:
         if password is None:
             password = secrets.token_urlsafe(12)
         if len(password) < 12:
-            raise ValueError('Password must be at least 8 characters.')
+            raise ValueError('Password must be at least 12 characters.')
         password = password.encode()
 
         credential = self.inventory.domains[domain].credentials[unique_name]

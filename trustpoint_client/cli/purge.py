@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import click
 
-from trustpoint_client.api import purge_working_dir_inventory_and_config
+from trustpoint_client.api.trustpoint import purge_working_dir_inventory_and_config
 from trustpoint_client.cli import handle_exception
 
 

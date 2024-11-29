@@ -7,7 +7,7 @@ from enum import Enum
 import click
 from prettytable import PrettyTable
 
-from trustpoint_client.api import TrustpointClient
+from trustpoint_client.api.trustpoint import TrustpointClient
 from trustpoint_client.api.exceptions import DomainDoesNotExist
 from trustpoint_client.cli import domain_option_required, handle_exception
 

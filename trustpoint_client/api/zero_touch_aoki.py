@@ -71,7 +71,7 @@ from enum import IntEnum
 from pathlib import Path
 
 from trustpoint_client.api.exceptions import OnboardingError
-from trustpoint_client.api import TrustpointClient
+from trustpoint_client.api.trustpoint import TrustpointClient
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('tpclient.aoki')

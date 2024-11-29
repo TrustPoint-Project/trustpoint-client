@@ -5,7 +5,7 @@ from __future__ import annotations
 import click
 import prettytable
 
-from trustpoint_client.api import TrustpointClient
+from trustpoint_client.api.trustpoint import TrustpointClient
 from trustpoint_client.cli import domain_option_optional, domain_option_required, handle_exception, verbose_option
 
 
