@@ -7,14 +7,15 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-zeroconf = "^0.136.0"
-prettytable = "^3.12.0"
-click = "^8.1.7"
-pydantic = "^2.9.2"
+trustpoint-devid-module = "0.2.3"
+zeroconf = "^0.142.0"
+prettytable = "^3.13.0"
+click = "^8.1.8"
+pydantic = "^2.10.6"
 platformdirs = "^4.3.6"
 requests = "^2.32.3"
-cryptography = "^43.0.3"
-trustpoint-devid-module = "^0.0.7"
+cryptography = "^44.0.0"
+mypy = "^1.14.1"
 
 [build-system]
 requires = ["poetry-core"]
