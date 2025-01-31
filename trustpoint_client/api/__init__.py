@@ -1,220 +1,165 @@
+"""The trustpoint_client.api package __init__ module provides context initialization and data handling features."""
+
 from __future__ import annotations
 
-from pathlib import Path
-from trustpoint_devid_module.cli import DevIdModule
-from trustpoint_devid_module import purge_working_dir_and_inventory as purge_devid_module
-from trustpoint_devid_module import exceptions as devid_exceptions
 import shutil
-import pydantic
+from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pydantic
 from platformdirs import PlatformDirs
-
-from trustpoint_client.api.exceptions import (
-    TrustpointClientCorruptedError,
-    NotInitializedError,
-    AlreadyInitializedError,
-    WorkingDirectoryAlreadyExistsError,
-    InventoryDataWriteError,
-    PurgeError,
-    NothingToPurgeError,
-    UnexpectedTrustpointClientError,
-    DomainDoesNotExist
+from prettytable import PrettyTable
+from trustpoint_devid_module import exceptions as devid_exceptions  # type: ignore[import-untyped]
+from trustpoint_devid_module import (
+    purge_working_dir_and_inventory as purge_devid_module,  # type: ignore[import-untyped]
 )
-
-from trustpoint_client.api.decorator import handle_unexpected_errors
-from trustpoint_client.api.schema import InventoryModel, TrustpointClientConfigModel
-from trustpoint_client.api.credentials import TrustpointClientCredential
-from trustpoint_client.api.onboard import TrustpointClientOnboardingMixin
-from trustpoint_client.api.domains import TrustpointClientDomain, DomainConfig
+from trustpoint_devid_module.cli import DevIdModule  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
     from typing import Any
+
+from trustpoint_client.api.schema import InventoryModel
 
 dirs = PlatformDirs(appname='trustpoint_client', appauthor='trustpoint')
 WORKING_DIR = Path(dirs.user_data_dir)
 INVENTORY_FILE_PATH = WORKING_DIR / Path('inventory.json')
 CONFIG_FILE_PATH = WORKING_DIR / Path('config.json')
 
-def initialize_working_dir_inventory_and_config() -> None:
 
-    try:
-        Path.mkdir(WORKING_DIR, parents=True, exist_ok=False)
-    except FileExistsError as exception:
-        raise WorkingDirectoryAlreadyExistsError from exception
+class TrustpointClientError(Exception):
+    """Base class for all Trustpoint Client Exceptions."""
 
-    inventory = InventoryModel(
-        domains={}
-    )
-
-    try:
-        INVENTORY_FILE_PATH.write_text(inventory.model_dump_json())
-    except Exception as exception:
-        raise InventoryDataWriteError from exception
-
-    config_model = TrustpointClientConfigModel(
-        default_domain=None,
-    )
-
-    try:
-        CONFIG_FILE_PATH.write_text(config_model.model_dump_json())
-    except Exception as exception:
-        raise InventoryDataWriteError from exception
-
-
-def purge_working_dir_inventory_and_config() -> None:
-    try:
-        shutil.rmtree(WORKING_DIR, ignore_errors=False)
-    except FileNotFoundError:
-        pass
-    except Exception as exception:
-        raise PurgeError from exception
-
-    try:
-        purge_devid_module()
-    except Exception as exception:
-        raise PurgeError from exception
-
-
-class TrustpointClient(
-        TrustpointClientCredential,
-        TrustpointClientOnboardingMixin,
-        TrustpointClientDomain,
-        DomainConfig):
-    """The Trustpoint Client class."""
-
-    _inventory_file_path: Path
-    _inventory: InventoryModel
-
-    _config_file_path: Path
-    _config: TrustpointClientConfigModel
-
-    _devid_module: DevIdModule
-
-    def __init__(
-            self,
-            inventory_file_path: Path = INVENTORY_FILE_PATH,
-            config_file_path: Path = CONFIG_FILE_PATH) -> None:
-        """Instantiates a TrustpointClient object with the desired working directory.
+    def __init__(self, message: str) -> None:
+        """Initializes the TrustpointClientError.
 
         Args:
-            inventory_file_path: Full file path to the inventory.json file.
-            config_file_path: Full file path to the config.json file.
+            message: The error message.
+        """
+        super().__init__(message)
+
+
+def get_table_from_dict(data: dict[str, Any], key_header: str = 'Key', value_header: str = 'Value') -> PrettyTable:
+    """Gets a PrettyTable object for printing with reformatted keys for printing.
+
+    Args:
+        data: The data to be displayed in the table.
+        key_header: The heading for the key column.
+        value_header: The heading for the value column
+
+    Returns:
+        The created table instance.
+    """
+    table = PrettyTable([key_header, value_header])
+    table.add_rows([[key, value] for key, value in data.items()])
+    return table
+
+
+class TrustpointClientContext:
+    """The Trustpoint-Client context object provides access to the inventory data.
+
+    Note:
+        This context is not thread-safe. It is expected that only one of these instances exists and is used at the
+        same time. It is considered sufficient for this PoC type of client at the moment.
+    """
+
+    _inventory_file_path: Path
+    _inventory_model: InventoryModel
+    _devid_module: DevIdModule
+
+    def __init__(self, inventory_file_path: Path = INVENTORY_FILE_PATH) -> None:
+        """Initializes the TrustpointClientContext object.
+
+        Tries to load the inventory model. If the inventory model file does not exist, it initializes a new
+        empty inventory model.
+
+        Args:
+            inventory_file_path: The path to the inventory model file.
 
         Raises:
-            TrustpointClientCorruptedError: If the Trustpoint Client failed to load and verify the data from storage.
-            TrustpointClientCorruptedError: If the Trustpoint Client failed to load and verify the data from storage.
+            TrustpointClientError: If the initialization of the inventory model failed.
         """
         self._inventory_file_path = inventory_file_path
-        self._config_file_path = config_file_path
 
         try:
             self._devid_module = DevIdModule()
         except devid_exceptions.DevIdModuleCorruptedError as exception:
-            raise TrustpointClientCorruptedError from exception
+            raise TrustpointClientError(str(exception)) from exception
 
-        if not self.inventory_file_path.exists() or not self.config_file_path.exists():
-            initialize_working_dir_inventory_and_config()
+        if not inventory_file_path.exists():
+            try:
+                Path.mkdir(WORKING_DIR, parents=True, exist_ok=False)
+            except FileExistsError as exception:
+                raise TrustpointClientError(str(exception)) from exception
+
+            inventory = InventoryModel(default_domain=None, device_serial_number=None, domains={})
+
+            try:
+                INVENTORY_FILE_PATH.write_text(inventory.model_dump_json())
+            except Exception as exception:
+                raise TrustpointClientError(str(exception)) from exception
 
         try:
-            with self.inventory_file_path.open('r') as f:
-                self._inventory = InventoryModel.model_validate_json(f.read())
-            with self.config_file_path.open('r') as f:
-                self._config = TrustpointClientConfigModel.model_validate_json(f.read())
+            with inventory_file_path.open('r') as f:
+                self._inventory_model = InventoryModel.model_validate_json(f.read())
         except pydantic.ValidationError as exception:
-            raise TrustpointClientCorruptedError from exception
+            raise TrustpointClientError(str(exception)) from exception
 
+    @classmethod
+    def purge_working_dir(cls, working_dir: Path = WORKING_DIR) -> None:
+        """Purges both the Trustpoint-Client and DevIdModule working directory.
 
-    # ------------------------------------------ Trustpoint Client Properties ------------------------------------------
+        Args:
+            working_dir: The working directory to purge
+
+        Raises:
+            TrustpointClientError: If the purge failed. Either the current or DevIdModule working directory.
+        """
+        try:
+            shutil.rmtree(working_dir, ignore_errors=False)
+        except FileNotFoundError:
+            pass
+        except Exception as exception:
+            raise TrustpointClientError(str(exception)) from exception
+
+        try:
+            purge_devid_module()
+        except Exception as exception:
+            raise TrustpointClientError(str(exception)) from exception
 
     @property
-    def devid_module(self) -> DevIdModule:
-        return self._devid_module
-
-    @property
-    @handle_unexpected_errors(message='Failed to get the inventory path.')
     def inventory_file_path(self) -> Path:
-        """Returns the Path instance containing the inventory file path.
+        """Gets the inventory file path.
 
         Returns:
-            Path: The Path instance containing the inventory file path.
+            The inventory file path.
         """
         return self._inventory_file_path
 
     @property
-    def inventory(self) -> InventoryModel:
-        """Returns the current inventory as a model copy.
+    def inventory_model(self) -> InventoryModel:
+        """Gets the inventory model.
 
         Returns:
-            Inventory: A model copy of the current inventory.
+            The inventory model.
+        """
+        return self._inventory_model
+
+    @property
+    def devid_module(self) -> DevIdModule:
+        """Gets the DevIdModule instance.
+
+        Returns:
+            The DevIdModule instance.
+        """
+        return self._devid_module
+
+    def store_inventory(self) -> None:
+        """Stores the current state of the inventory.
 
         Raises:
-            NotInitializedError: If the Trustpoint Client is not yet initialized.
+            TrustpointClientError: If storing the inventory model failed.
         """
-        return self._inventory.model_copy()
-
-
-    @property
-    def config_file_path(self) -> Path:
-        """Returns the Path instance containing the config file path.
-
-        Returns:
-            Path: The Path instance containing the config file path.
-        """
-        return self._config_file_path
-
-    @property
-    def config(self) -> TrustpointClientConfigModel:
-        """Returns the current inventory as a model copy.
-
-        Returns:
-            Inventory: A model copy of the current inventory.
-
-        Raises:
-            NotInitializedError: If the Trustpoint Client is not yet initialized.
-        """
-        return self._config.model_copy()
-
-    @property
-    def config_as_dict(self) -> dict[str, Any]:
-        if self.config:
-            return {key: value for key, value in self.config.model_dump().items()}
-        return {}
-
-    @property
-    def default_domain(self) -> None | str:
-        if self.config:
-            return self.config.default_domain
-        return None
-
-    @default_domain.setter
-    def default_domain(self, default_domain: None | str) -> None:
-        if default_domain not in self.inventory.domains:
-            raise DomainDoesNotExist(domain=default_domain)
-        config_copy = self.config
-        config_copy.default_domain = default_domain
-        self._store_config(config_copy)
-
-    @default_domain.deleter
-    def default_domain(self) -> None:
-        config_copy = self.config
-        config_copy.default_domain = None
-        self._store_config(config_copy)
-
-    # -------------------------------------- Initialization, Purging and Storing ---------------------------------------
-
-    @handle_unexpected_errors(message='Failed to store the inventory.')
-    def _store_inventory(self, inventory: InventoryModel) -> None:
         try:
-            self.inventory_file_path.write_text(inventory.model_dump_json())
-            self._inventory = inventory
+            self.inventory_file_path.write_text(self.inventory_model.model_dump_json())
         except Exception as exception:
-            raise InventoryDataWriteError from exception
-
-    @handle_unexpected_errors(message='Failed to store the config.')
-    def _store_config(self, config_model: TrustpointClientConfigModel) -> None:
-        try:
-            self.config_file_path.write_text(config_model.model_dump_json())
-            self._config = config_model
-        except Exception as exception:
-            raise InventoryDataWriteError from exception
+            raise TrustpointClientError(str(exception)) from exception
