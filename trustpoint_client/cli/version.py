@@ -11,4 +11,4 @@ from trustpoint_client.cli import handle_exception, version_id
 @handle_exception
 def version() -> None:
     """Displays the version of Trustpoint-Client."""
-    click.echo(f'\n\tTrustpoint Client Version: v{version_id}\n')
+    click.echo(f'{version_id}')
