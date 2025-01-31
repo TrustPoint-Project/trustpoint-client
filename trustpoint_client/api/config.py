@@ -1,4 +1,4 @@
-"""Provides methods to read and write global trustpoint-client settings."""
+"""Provides functions to read and write global trustpoint-client settings."""
 
 from __future__ import annotations
 
