@@ -16,6 +16,7 @@ except Exception as exception:
     raise click.ClickException(str(exception)) from exception
 
 if TYPE_CHECKING:
+    import typing
     from typing import Any
 
 CLI_DIRECTORY = str(Path(__file__).resolve().parent)
@@ -27,7 +28,7 @@ verbose_option = click.option(
 )
 
 
-def handle_exception(func: callable) -> callable:
+def handle_exception(func: typing.Callable) -> typing.Callable:
     """Handles exceptions gracefully for the CLI application.
 
     Args:
@@ -64,12 +65,12 @@ class TrustPointClientCli(click.MultiCommand):
         ]
         return sorted(command_list)
 
-    def get_command(self, ctx: click.core.Context, name: str) -> dict:
+    def get_command(self, ctx: click.core.Context, name: str) -> None | click.Command:
         """Gets a command.
 
         Compare with Python Click documentation.
         """
-        ns = {}
+        ns: dict[str, click.Command] = {}
         if name not in self.list_commands(ctx):
             err_msg = f"\n\tCommand '{name}' does not exist.\n"
             raise ValueError(err_msg)
