@@ -18,7 +18,7 @@ from trustpoint_devid_module.cli import DevIdModule  # type: ignore[import-untyp
 if TYPE_CHECKING:
     from typing import Any
 
-from trustpoint_client.api.schema import InventoryModel
+from trustpoint_client.schema import InventoryModel
 
 dirs = PlatformDirs(appname='trustpoint_client', appauthor='trustpoint')
 WORKING_DIR = Path(dirs.user_data_dir)
