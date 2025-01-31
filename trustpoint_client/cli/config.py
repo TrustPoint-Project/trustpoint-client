@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from enum import Enum
-
 import click
-from prettytable import PrettyTable
 
-from trustpoint_client.api import TrustpointClient
-from trustpoint_client.api.exceptions import DomainDoesNotExist
-from trustpoint_client.cli import domain_option_required, handle_exception
+from trustpoint_client.api import TrustpointClientError, get_table_from_dict
+from trustpoint_client.api.config import (
+    get_config,
+    get_default_domain,
+    get_device_serial_number,
+    set_default_domain,
+    set_device_serial_number,
+)
 
 
 @click.group
@@ -18,82 +20,99 @@ def config() -> None:
 
 
 @config.command(name='list')
-@handle_exception
 def config_list() -> None:
     """Lists the current configurations."""
-    table = PrettyTable()
-    table.field_names = ['Setting', 'Value']
-    for key, value in TrustpointClient().config_as_dict.items():
-        local_value = '' if value is None else value
-        if isinstance(local_value, Enum):
-            local_value = value.value
-        local_key = str(key)
-        local_value = str(local_value)
-        table.add_row([str(local_key), str(local_value)])
-    click.echo(f'\n{table}\n')
-
-
-# --------------------------------------------------- Config Getter ----------------------------------------------------
+    click.echo(get_table_from_dict(data=get_config(), key_header='Configuration'))
 
 
 @config.group(name='get')
 def config_get() -> None:
-    """Gets the specific configuration field"""
-
-
-@config_get.command(name='default-domain')
-@handle_exception
-def config_get_default_domain() -> None:
-    """Gets the current default trustpoint domain."""
-    default_domain = TrustpointClient().default_domain
-    if default_domain:
-        click.echo(f'\n\tDefault domain: {default_domain}.\n')
-    else:
-        click.echo('\n\tNo default domain configured.\n')
-
-
-# --------------------------------------------------- Config Setter ----------------------------------------------------
+    """Commands for getting specific configurations manually."""
 
 
 @config.group(name='set')
 def config_set() -> None:
-    """Sets the specific configuration field."""
-
-
-@config_set.command(name='default-domain')
-@domain_option_required
-@handle_exception
-def config_set_default_domain(domain: str) -> None:
-    """Sets / overwrites the default trustpoint domain."""
-    try:
-        TrustpointClient().default_domain = domain
-        click.echo(f'\n\tDefault domain configured: {domain}.\n')
-    except DomainDoesNotExist as exception:
-        click.echo(f'\n{exception}\n')
-
-
-# --------------------------------------------------- Config Clearer ---------------------------------------------------
+    """Commands for setting specific configurations manually."""
 
 
 @config.group(name='clear')
 def config_clear() -> None:
-    """Clears the specific configuration field."""
+    """Commands for clearing configuration manually."""
 
 
-@config_clear.command(name='default-domain')
-@handle_exception
+@config_clear.command(name='all')
+def config_clear_all() -> None:
+    """Clears all global configurations."""
+    try:
+        set_default_domain(None)
+        set_device_serial_number(None)
+    except TrustpointClientError as exception:
+        raise click.ClickException(str(exception)) from exception
+    click.echo('All global configurations have been cleared.')
+
+
+@config_get.command(name='default_domain')
+def config_get_default_domain() -> None:
+    """Gets the default domain."""
+    click.echo(get_default_domain())
+
+
+@config_set.command(name='default_domain')
+@click.argument('default_domain', type=str)
+def config_set_default_domain(default_domain: str) -> None:
+    """Sets the default domain.
+
+    Args:
+        default_domain: The default domain to set.
+    """
+    try:
+        set_default_domain(default_domain)
+    except TrustpointClientError as exception:
+        raise click.ClickException(str(exception)) from exception
+    click.echo(f'Default domain set to {default_domain}.')
+
+
+@config_clear.command(name='default_domain')
 def config_clear_default_domain() -> None:
-    """Clears the default trustpoint domain."""
-    if TrustpointClient().default_domain is None:
-        click.echo('\n\tNo default domain configured. Nothing to clear.\n')
-        return
+    """Clears the default domain."""
+    try:
+        set_default_domain(None)
+    except TrustpointClientError as exception:
+        raise click.ClickException(str(exception)) from exception
+    click.echo('Default domain cleared.')
 
-    if click.confirm(
-        'Are you sure to clear the default trustpoint domain? '
-        'You will have to explicitly state the domain with every command if no default domain is set.'
+
+@config_get.command(name='device_serial_number')
+def config_get_device_serial_number() -> None:
+    """Gets the device serial number."""
+    click.echo(get_device_serial_number())
+
+
+@config_set.command(name='device_serial_number')
+@click.argument('device_serial_number', type=str)
+def config_set_device_serial_number(device_serial_number: str) -> None:
+    """Sets the device serial number.
+
+    Args:
+        device_serial_number: The device serial number to set.
+    """
+    current_serial_number = get_device_serial_number()
+    if current_serial_number is None or click.confirm(
+        f'The current device serial number is {current_serial_number}. '
+        f'The device serial number must match the serial number field in DevID certificate subjects.'
+        f'Are you sure you want to overwrite it?'
     ):
-        del TrustpointClient().default_domain
-        click.echo('\n\tDefault domain cleared.\n')
-        return
+        set_device_serial_number(device_serial_number)
+        click.echo(f'Device serial number set to: {device_serial_number}.')
+    else:
+        click.echo('Aborted. Device serial number was not modified.')
 
-    click.echo('\n\tAborted.\n')
+
+@config_clear.command(name='device_serial_number')
+def config_clear_device_serial_number() -> None:
+    """Clears the device serial number."""
+    try:
+        set_device_serial_number(None)
+    except TrustpointClientError as exception:
+        raise click.ClickException(str(exception)) from exception
+    click.echo('Device serial number cleared.')
