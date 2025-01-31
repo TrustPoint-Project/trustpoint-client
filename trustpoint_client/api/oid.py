@@ -1,9 +1,16 @@
+"""This module contains OID enums required for PKIX."""
+
 from __future__ import annotations
 
 import enum
+from typing import Self
 
 
 class NameOid(enum.Enum):
+    """Name OID enum."""
+
+    dotted_string: str
+    names: list[str]
 
     COMMON_NAME = ('2.5.4.3', ['CN', 'commonName'])
     LOCALITY_NAME = ('2.5.4.6', ['L', 'lastName'])
@@ -31,7 +38,13 @@ class NameOid(enum.Enum):
     UNSTRUCTURED_NAME = ('1.2.840.113549.1.9.2', ['unstructuredName'])
     UNSTRUCTURED_ADDRESS = ('1.2.840.113549.1.9.8', ['unstructuredAddress'])
 
-    def __new__(cls, dotted_string, names):
+    def __new__(cls, dotted_string: str, names: list[str]) -> Self:
+        """Sets the attribute values for the multi value enum.
+
+        Args:
+            dotted_string: The corresponding OID, also used as the default value of the enum.
+            names: All names that are often used to describe the name oid.
+        """
         obj = object.__new__(cls)
         obj._value_ = dotted_string
         obj.dotted_string = dotted_string
@@ -40,12 +53,25 @@ class NameOid(enum.Enum):
 
     @classmethod
     def get_by_name(cls, name: str) -> None | NameOid:
+        """Gets the NameOID enum by name.
+
+        Args:
+            name: The name of the desired NameOid enum.
+
+        Returns:
+            The corresponding NameOid enum if one exists, None otherwise.
+        """
         for entry in cls:
             if name.lower() in [value.lower() for value in entry.names]:
                 return entry
+        return None
 
 
 class CertificateExtensionOid(enum.Enum):
+    """Certificate Extension enum."""
+
+    dotted_string: str
+    verbose_name: str
 
     SUBJECT_DIRECTORY_ATTRIBUTES = ('2.5.29.9', 'Subject Directory Attributes')
     SUBJECT_KEY_IDENTIFIER = ('2.5.29.14', 'Subject Key Identifier')
@@ -74,20 +100,26 @@ class CertificateExtensionOid(enum.Enum):
     SIGNED_CERTIFICATE_TIMESTAMPS = ('1.3.6.1.4.1.11129.2.4.5', 'Signed Certificate Timestamps')
     MS_CERTIFICATE_TEMPLATE = ('1.3.6.1.4.1.311.21.7', 'Microsoft Certificate Template')
 
-    @staticmethod
-    def get_short_description_str() -> str:
-        return 'Extension OID'
+    def __new__(cls, dotted_string: str, verbose_name: str) -> Self:
+        """Sets the attribute values for the multi value enum.
 
-    def __new__(cls, dotted_string, verbose_name):
+        Args:
+            dotted_string: The corresponding OID, also used as the default value of the enum.
+            verbose_name: The corresponding verbose name to displaying it properly.
+        """
         obj = object.__new__(cls)
         obj._value_ = dotted_string
         obj.dotted_string = dotted_string
         obj.verbose_name = verbose_name
         return obj
 
-class EllipticCurveOid(enum.Enum):
 
-    # OID, verbose_name, key_size
+class EllipticCurveOid(enum.Enum):
+    """Elliptic Curve OID enum."""
+
+    dotted_string:str
+    verbose_name: str
+    key_size: int
 
     NONE = ('None', '', 0)
     SECP192R1 = ('1.2.840.10045.3.1.1', 'SECP192R1', 192)
@@ -110,7 +142,14 @@ class EllipticCurveOid(enum.Enum):
     SECT571K1 = ('1.3.132.0.38', 'SECT571K1', 571)
     SECT571R1 = ('1.3.132.0.39', 'SECT571R1', 570)
 
-    def __new__(cls, dotted_string, verbose_name, key_size):
+    def __new__(cls, dotted_string: str, verbose_name: str, key_size: int) -> Self:
+        """Sets the attribute values for the multi value enum.
+
+        Args:
+            dotted_string: The corresponding OID, also used as the default value of the enum.
+            verbose_name: The corresponding verbose name to displaying it properly.
+            key_size: The size of the key.
+        """
         obj = object.__new__(cls)
         obj._value_ = dotted_string
         obj.dotted_string = dotted_string
@@ -120,24 +159,31 @@ class EllipticCurveOid(enum.Enum):
 
 
 class RsaPaddingScheme(enum.Enum):
+    """RSA Padding Scheme enum."""
+
     NONE = 'None'
     PKCS1v15 = 'PKCS#1 v1.5'
     PSS = 'PSS'
 
-    def __new__(cls, verbose_name):
-        obj = object.__new__(cls)
-        obj._value_ = verbose_name
-        obj.verbose_name = verbose_name
-        return obj
-
 
 class PublicKeyAlgorithmOid(enum.Enum):
+    """PublicKey Algorithm OID enum."""
+
+    dotted_string: str
+    verbose_name: str
+
     ECC = ('1.2.840.10045.2.1', 'ECC')
     RSA = ('1.2.840.113549.1.1.1', 'RSA')
     ED25519 = ('1.3.101.112', 'ED25519')
     ED448 = ('1.3.101.113', 'ED448')
 
-    def __new__(cls, dotted_string, verbose_name):
+    def __new__(cls, dotted_string: str, verbose_name: str) -> Self:
+        """Sets the attribute values for the multi value enum.
+
+        Args:
+            dotted_string: The corresponding OID, also used as the default value of the enum.
+            verbose_name: The corresponding verbose name to displaying it properly.
+        """
         obj = object.__new__(cls)
         obj._value_ = dotted_string
         obj.dotted_string = dotted_string
@@ -146,8 +192,12 @@ class PublicKeyAlgorithmOid(enum.Enum):
 
 
 class SignatureAlgorithmOid(enum.Enum):
+    """Signature Algorithm OID enum."""
 
-    # OID, verbose_name, public_key_algorithm_oid, padding_scheme
+    dotted_string: str
+    verbose_name: str
+    public_key_algo_oid: PublicKeyAlgorithmOid
+    padding_scheme: RsaPaddingScheme
 
     RSA_MD5 = ('1.2.840.113549.1.1.4', 'RSA with MD5', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
     RSA_SHA1 = ('1.2.840.113549.1.1.5', 'RSA with SHA1', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
@@ -157,32 +207,77 @@ class SignatureAlgorithmOid(enum.Enum):
     RSA_SHA384 = ('1.2.840.113549.1.1.12', 'RSA with SHA384', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
     RSA_SHA512 = ('1.2.840.113549.1.1.13', 'RSA with SHA512', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
     RSA_SHA3_224 = (
-        '2.16.840.1.101.3.4.3.13', 'RSA with SHA3-224', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
+        '2.16.840.1.101.3.4.3.13',
+        'RSA with SHA3-224',
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+    )
     RSA_SHA3_256 = (
-        '2.16.840.1.101.3.4.3.14', 'RSA with SHA3-256', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
+        '2.16.840.1.101.3.4.3.14',
+        'RSA with SHA3-256',
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+    )
     RSA_SHA3_384 = (
-        '2.16.840.1.101.3.4.3.15', 'RSA with SHA3-384', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
+        '2.16.840.1.101.3.4.3.15',
+        'RSA with SHA3-384',
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+    )
     RSA_SHA3_512 = (
-        '2.16.840.1.101.3.4.3.16', 'RSA with SHA3-512', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
+        '2.16.840.1.101.3.4.3.16',
+        'RSA with SHA3-512',
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+    )
 
     RSASSA_PSS = (
-        '1.2.840.113549.1.1.10', 'RSA (RSASSA-PSS), Padding: PSS', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PSS)
+        '1.2.840.113549.1.1.10',
+        'RSA (RSASSA-PSS), Padding: PSS',
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PSS,
+    )
 
     ECDSA_SHA1 = ('1.2.840.10045.4.1', 'ECDSA with SHA1', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA224 = ('1.2.840.10045.4.3.1', 'ECDSA with SHA224', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA256 = ('1.2.840.10045.4.3.2', 'ECDSA with SHA256', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA384 = ('1.2.840.10045.4.3.3', 'ECDSA with SHA384', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA512 = ('1.2.840.10045.4.3.4', 'ECDSA with SHA512', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
-    ECDSA_SHA3_224 = (
-        '2.16.840.1.101.3.4.3.9', 'ECDSA with SHA3-224', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+    ECDSA_SHA3_224 = ('2.16.840.1.101.3.4.3.9', 'ECDSA with SHA3-224', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA3_256 = (
-        '2.16.840.1.101.3.4.3.10', 'ECDSA with SHA3-256', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.10',
+        'ECDSA with SHA3-256',
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+    )
     ECDSA_SHA3_384 = (
-        '2.16.840.1.101.3.4.3.11', 'ECDSA with SHA3-384', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.11',
+        'ECDSA with SHA3-384',
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+    )
     ECDSA_SHA3_512 = (
-        '2.16.840.1.101.3.4.3.12', 'ECDSA with SHA3-512', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.12',
+        'ECDSA with SHA3-512',
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+    )
 
-    def __new__(cls, dotted_string, verbose_name, public_key_algo_oid, padding_scheme):
+    def __new__(
+        cls,
+        dotted_string: str,
+        verbose_name: str,
+        public_key_algo_oid: PublicKeyAlgorithmOid,
+        padding_scheme: RsaPaddingScheme,
+    ) -> Self:
+        """Sets the attribute values for the multi value enum.
+
+        Args:
+            dotted_string: The corresponding OID, also used as the default value of the enum.
+            verbose_name: The corresponding verbose name to displaying it properly.
+            public_key_algo_oid: The corresponding public key algorithm OID.
+            padding_scheme: The corresponding RSA padding scheme.
+        """
         obj = object.__new__(cls)
         obj._value_ = dotted_string
         obj.dotted_string = dotted_string
@@ -191,7 +286,12 @@ class SignatureAlgorithmOid(enum.Enum):
         obj.padding_scheme = padding_scheme
         return obj
 
+
 class ExtendedKeyUsageOptionOid(enum.Enum):
+    """X.509 extended key usage extension option oid enum."""
+
+    pretty_value: str
+    dotted_string: str
 
     SERVER_AUTH = ('serverauth', 'serverAuth', '1.3.6.1.5.5.7.3.1')
     CLIENT_AUTH = ('clientauth', 'clientAuth', '1.3.6.1.5.5.7.3.2')
@@ -205,7 +305,14 @@ class ExtendedKeyUsageOptionOid(enum.Enum):
     IPSEC_IKE = ('ipsecike', 'ipsecIke', '1.3.6.1.5.5.7.3.17')
     CERTIFICATE_TRANSPARENCY = ('certificatetransparency', 'certificateTransparency', '1.3.6.1.4.1.11129.2.4.4')
 
-    def __new__(cls, value: str, pretty_value: str, dotted_string: str) -> ExtendedKeyUsageOptionOid:
+    def __new__(cls, value: str, pretty_value: str, dotted_string: str) -> Self:
+        """Sets the attribute values for the multi value enum.
+
+        Args:
+            value: The actual value of the enum.
+            pretty_value: The values in camel case notation.
+            dotted_string: The corresponding OID value.
+        """
         obj = object.__new__(cls)
         obj._value_ = value
         obj.pretty_value = pretty_value
