@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import click
 
-from trustpoint_client.cli import handle_exception, version_id
+from trustpoint_client.cli import version_id
 
 
 @click.command
-@handle_exception
 def version() -> None:
     """Displays the version of Trustpoint-Client."""
     click.echo(f'{version_id}')
