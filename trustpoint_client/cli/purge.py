@@ -5,11 +5,9 @@ from __future__ import annotations
 import click
 
 from trustpoint_client.api import TrustpointClientContext
-from trustpoint_client.cli import handle_exception
 
 
 @click.command
-@handle_exception
 def purge() -> None:
     """Purges all data of the Trustpoint Client."""
     if click.confirm(
