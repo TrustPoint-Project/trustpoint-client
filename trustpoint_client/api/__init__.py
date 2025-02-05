@@ -88,11 +88,11 @@ class TrustpointClientContext:
 
         if not inventory_file_path.exists():
             try:
-                Path.mkdir(WORKING_DIR, parents=True, exist_ok=False)
+                Path.mkdir(WORKING_DIR, parents=True, exist_ok=True)
             except FileExistsError as exception:
                 raise TrustpointClientError(str(exception)) from exception
 
-            inventory = InventoryModel(default_domain=None, device_serial_number=None, domains={})
+            inventory = InventoryModel(default_domain=None, device_serial_number=None, domains={}, idevids={})
 
             try:
                 INVENTORY_FILE_PATH.write_text(inventory.model_dump_json())
@@ -193,14 +193,14 @@ class DemoIdevidContext:
 
         if not self._demo_idevid_file_path.exists():
             try:
-                Path.mkdir(WORKING_DIR, parents=True, exist_ok=False)
+                Path.mkdir(WORKING_DIR, parents=True, exist_ok=True)
             except FileExistsError as exception:
                 raise TrustpointClientError(str(exception)) from exception
 
-            inventory = IdevidModel(hierarchies={})
+            idevid_model = IdevidModel(hierarchies={})
 
             try:
-                self._demo_idevid_file_path.write_text(inventory.model_dump_json())
+                self._demo_idevid_file_path.write_text(idevid_model.model_dump_json())
             except Exception as exception:
                 raise TrustpointClientError(str(exception)) from exception
 
