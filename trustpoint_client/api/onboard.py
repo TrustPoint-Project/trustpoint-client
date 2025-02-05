@@ -70,13 +70,13 @@ def onboard_with_shared_secret(
         'openssl cmp '
         '-cmd ir '
         '-implicit_confirm '
-        f'-server http://{host}:{port}/.well-known/cmp/initialization/{domain}/ '
-        f'-secret pass:{shared_secret} '
-        f'-ref {device_id} '
+        f'-server "http://{host}:{port}/.well-known/cmp/initialization/{domain}/" '
+        f'-secret "pass:{shared_secret}" '
+        f'-ref "{device_id}" '
         '-subject "/CN=Trustpoint Domain Credential" '
-        f'-newkey {tmp_key_file_path.resolve()} '
-        f'-certout {tmp_cert_file_path.resolve()} '
-        f'-extracertsout {tmp_extra_certs_file_path.resolve()} '
+        f'-newkey "{tmp_key_file_path.resolve()}" '
+        f'-certout "{tmp_cert_file_path.resolve()}" '
+        f'-extracertsout "{tmp_extra_certs_file_path.resolve()}"'
     )
 
     subprocess.run(ossl_cmp_cmd, shell=True)
