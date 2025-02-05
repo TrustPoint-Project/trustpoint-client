@@ -419,124 +419,6 @@ class PublicKeyAlgorithmOid(enum.Enum):
         raise TypeError(err_msg)
 
 
-class AlgorithmIdentifier(enum.Enum):
-    """Algorithm Identifier Enum."""
-
-    dotted_string: str
-    verbose_name: str
-    public_key_algo_oid: PublicKeyAlgorithmOid
-    padding_scheme: RsaPaddingScheme
-
-    RSA_MD5 = ('1.2.840.113549.1.1.4', 'RSA with MD5', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
-    RSA_SHA1 = ('1.2.840.113549.1.1.5', 'RSA with SHA1', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
-    RSA_SHA1_ALT = ('1.3.14.3.2.29', 'RSA with SHA1', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
-    RSA_SHA224 = ('1.3.14.3.2.29', 'RSA with SHA224', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
-    RSA_SHA256 = ('1.2.840.113549.1.1.11', 'RSA with SHA256', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
-    RSA_SHA384 = ('1.2.840.113549.1.1.12', 'RSA with SHA384', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
-    RSA_SHA512 = ('1.2.840.113549.1.1.13', 'RSA with SHA512', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
-    RSA_SHA3_224 = (
-        '2.16.840.1.101.3.4.3.13',
-        'RSA with SHA3-224',
-        PublicKeyAlgorithmOid.RSA,
-        RsaPaddingScheme.PKCS1v15,
-    )
-    RSA_SHA3_256 = (
-        '2.16.840.1.101.3.4.3.14',
-        'RSA with SHA3-256',
-        PublicKeyAlgorithmOid.RSA,
-        RsaPaddingScheme.PKCS1v15,
-    )
-    RSA_SHA3_384 = (
-        '2.16.840.1.101.3.4.3.15',
-        'RSA with SHA3-384',
-        PublicKeyAlgorithmOid.RSA,
-        RsaPaddingScheme.PKCS1v15,
-    )
-    RSA_SHA3_512 = (
-        '2.16.840.1.101.3.4.3.16',
-        'RSA with SHA3-512',
-        PublicKeyAlgorithmOid.RSA,
-        RsaPaddingScheme.PKCS1v15,
-    )
-
-    # TODO(AlexHx8472): Add RSA PSS support.
-
-    ECDSA_SHA1 = ('1.2.840.10045.4.1', 'ECDSA with SHA1', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
-    ECDSA_SHA224 = ('1.2.840.10045.4.3.1', 'ECDSA with SHA224', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
-    ECDSA_SHA256 = ('1.2.840.10045.4.3.2', 'ECDSA with SHA256', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
-    ECDSA_SHA384 = ('1.2.840.10045.4.3.3', 'ECDSA with SHA384', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
-    ECDSA_SHA512 = ('1.2.840.10045.4.3.4', 'ECDSA with SHA512', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
-    ECDSA_SHA3_224 = (
-        '2.16.840.1.101.3.4.3.9',
-        'ECDSA with SHA3-224',
-        PublicKeyAlgorithmOid.ECC,
-        RsaPaddingScheme.NONE,
-    )
-    ECDSA_SHA3_256 = (
-        '2.16.840.1.101.3.4.3.10',
-        'ECDSA with SHA3-256',
-        PublicKeyAlgorithmOid.ECC,
-        RsaPaddingScheme.NONE,
-    )
-    ECDSA_SHA3_384 = (
-        '2.16.840.1.101.3.4.3.11',
-        'ECDSA with SHA3-384',
-        PublicKeyAlgorithmOid.ECC,
-        RsaPaddingScheme.NONE,
-    )
-    ECDSA_SHA3_512 = (
-        '2.16.840.1.101.3.4.3.12',
-        'ECDSA with SHA3-512',
-        PublicKeyAlgorithmOid.ECC,
-        RsaPaddingScheme.NONE,
-    )
-    PASSWORD_BASED_MAC = (
-        '1.2.840.113533.7.66.13',
-        'Password Based MAC',
-        PublicKeyAlgorithmOid.NONE,
-        RsaPaddingScheme.NONE,
-    )
-
-    def __new__(
-        cls,
-        dotted_string: str,
-        verbose_name: str,
-        public_key_algo_oid: PublicKeyAlgorithmOid,
-        padding_scheme: RsaPaddingScheme,
-    ) -> Self:
-        """Sets the values for this multi value enum.
-
-        Args:
-            dotted_string: The corresponding OID value, also used as the enum value.
-            verbose_name: The verbose name for displaying it to a user.
-            public_key_algo_oid: The corresponding PublicKeyAlgorithmOid enum.
-            padding_scheme: The corresponding RsaPaddingScheme enum.
-        """
-        obj = object.__new__(cls)
-        obj._value_ = dotted_string
-        obj.dotted_string = dotted_string
-        obj.verbose_name = verbose_name
-        obj.public_key_algo_oid = public_key_algo_oid
-        obj.padding_scheme = padding_scheme
-        return obj
-
-    @classmethod
-    def from_certificate(cls, certificate: x509.Certificate) -> AlgorithmIdentifier:
-        """Gets the AlgorithmIdentifier enum matching the signature used to sign the certificate.
-
-        Args:
-            certificate: The certificate to get the PublicKeyAlgorithmOid for.
-
-        Returns:
-            The matching PublicKeyAlgorithmOid Enum.
-        """
-        for member in cls:
-            if member.dotted_string == certificate.signature_algorithm_oid.dotted_string:
-                return member
-        err_msg = f'AlgorithmIdentifier {certificate.signature_algorithm_oid.dotted_string} is unkown.'
-        raise ValueError(err_msg)
-
-
 class HashAlgorithm(enum.Enum):
     """Hash Algorithm Enum."""
 
@@ -577,6 +459,142 @@ class HashAlgorithm(enum.Enum):
         obj.verbose_name = verbose_name
         obj.hash_algorithm = hash_algorithm
         return obj
+
+
+class AlgorithmIdentifier(enum.Enum):
+    """Algorithm Identifier Enum."""
+
+    dotted_string: str
+    verbose_name: str
+    public_key_algo_oid: PublicKeyAlgorithmOid
+    padding_scheme: RsaPaddingScheme
+
+    RSA_MD5 = (
+        '1.2.840.113549.1.1.4',
+        'RSA with MD5',
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+        HashAlgorithm.MD5)
+    RSA_SHA1 = (
+        '1.2.840.113549.1.1.5',
+        'RSA with SHA1', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15, HashAlgorithm.SHA1)
+    RSA_SHA1_ALT = ('1.3.14.3.2.29', 'RSA with SHA1', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15, HashAlgorithm.SHA1)
+    RSA_SHA224 = ('1.3.14.3.2.29', 'RSA with SHA224', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15, HashAlgorithm.SHA224)
+    RSA_SHA256 = ('1.2.840.113549.1.1.11', 'RSA with SHA256', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15, HashAlgorithm.SHA256)
+    RSA_SHA384 = ('1.2.840.113549.1.1.12', 'RSA with SHA384', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15, HashAlgorithm.SHA384)
+    RSA_SHA512 = ('1.2.840.113549.1.1.13', 'RSA with SHA512', PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15, HashAlgorithm.SHA512)
+    RSA_SHA3_224 = (
+        '2.16.840.1.101.3.4.3.13',
+        'RSA with SHA3-224',
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+        HashAlgorithm.SHA3_224
+    )
+    RSA_SHA3_256 = (
+        '2.16.840.1.101.3.4.3.14',
+        'RSA with SHA3-256',
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+        HashAlgorithm.SHA3_256
+    )
+    RSA_SHA3_384 = (
+        '2.16.840.1.101.3.4.3.15',
+        'RSA with SHA3-384',
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+        HashAlgorithm.SHA3_384
+    )
+    RSA_SHA3_512 = (
+        '2.16.840.1.101.3.4.3.16',
+        'RSA with SHA3-512',
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+        HashAlgorithm.SHA3_512
+    )
+
+    # TODO(AlexHx8472): Add RSA PSS support.
+
+    ECDSA_SHA1 = ('1.2.840.10045.4.1', 'ECDSA with SHA1', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE, HashAlgorithm.SHA1)
+    ECDSA_SHA224 = ('1.2.840.10045.4.3.1', 'ECDSA with SHA224', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE, HashAlgorithm.SHA224)
+    ECDSA_SHA256 = ('1.2.840.10045.4.3.2', 'ECDSA with SHA256', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE, HashAlgorithm.SHA256)
+    ECDSA_SHA384 = ('1.2.840.10045.4.3.3', 'ECDSA with SHA384', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE, HashAlgorithm.SHA384)
+    ECDSA_SHA512 = ('1.2.840.10045.4.3.4', 'ECDSA with SHA512', PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE, HashAlgorithm.SHA512)
+    ECDSA_SHA3_224 = (
+        '2.16.840.1.101.3.4.3.9',
+        'ECDSA with SHA3-224',
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+        HashAlgorithm.SHA3_224,
+    )
+    ECDSA_SHA3_256 = (
+        '2.16.840.1.101.3.4.3.10',
+        'ECDSA with SHA3-256',
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+        HashAlgorithm.SHA3_256,
+    )
+    ECDSA_SHA3_384 = (
+        '2.16.840.1.101.3.4.3.11',
+        'ECDSA with SHA3-384',
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+        HashAlgorithm.SHA3_384,
+    )
+    ECDSA_SHA3_512 = (
+        '2.16.840.1.101.3.4.3.12',
+        'ECDSA with SHA3-512',
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+        HashAlgorithm.SHA3_512,
+    )
+    PASSWORD_BASED_MAC = (
+        '1.2.840.113533.7.66.13',
+        'Password Based MAC',
+        PublicKeyAlgorithmOid.NONE,
+        RsaPaddingScheme.NONE,
+        None
+    )
+
+    def __new__(
+        cls,
+        dotted_string: str,
+        verbose_name: str,
+        public_key_algo_oid: PublicKeyAlgorithmOid,
+        padding_scheme: RsaPaddingScheme,
+        hash_algorithm: None | HashAlgorithm
+    ) -> Self:
+        """Sets the values for this multi value enum.
+
+        Args:
+            dotted_string: The corresponding OID value, also used as the enum value.
+            verbose_name: The verbose name for displaying it to a user.
+            public_key_algo_oid: The corresponding PublicKeyAlgorithmOid enum.
+            padding_scheme: The corresponding RsaPaddingScheme enum.
+        """
+        obj = object.__new__(cls)
+        obj._value_ = dotted_string
+        obj.dotted_string = dotted_string
+        obj.verbose_name = verbose_name
+        obj.public_key_algo_oid = public_key_algo_oid
+        obj.padding_scheme = padding_scheme
+        obj.hash_algorithm = hash_algorithm
+        return obj
+
+    @classmethod
+    def from_certificate(cls, certificate: x509.Certificate) -> AlgorithmIdentifier:
+        """Gets the AlgorithmIdentifier enum matching the signature used to sign the certificate.
+
+        Args:
+            certificate: The certificate to get the PublicKeyAlgorithmOid for.
+
+        Returns:
+            The matching PublicKeyAlgorithmOid Enum.
+        """
+        for member in cls:
+            if member.dotted_string == certificate.signature_algorithm_oid.dotted_string:
+                return member
+        err_msg = f'AlgorithmIdentifier {certificate.signature_algorithm_oid.dotted_string} is unkown.'
+        raise ValueError(err_msg)
 
 
 class HmacAlgorithm(enum.Enum):
@@ -786,6 +804,14 @@ class SignatureSuite:
             return NotImplemented
 
         return self.public_key_info == other.public_key_info and self.algorithm_identifier == other.algorithm_identifier
+
+    def __str__(self) -> str:
+        hash_alg_name = self.algorithm_identifier.hash_algorithm.verbose_name
+        if self.public_key_info.public_key_algorithm_oid == PublicKeyAlgorithmOid.RSA:
+            return f'RSA-{self.public_key_info.key_size}-{hash_alg_name}'
+        if self.public_key_info.public_key_algorithm_oid == PublicKeyAlgorithmOid.ECC:
+            return f'ECC-{self.public_key_info.named_curve.verbose_name}-{hash_alg_name}'
+        return f'Invalid Signature Suite'
 
     def _validate_consistency(self) -> None:
         """Validates if the PublicKeyInfo details matches the AlgorithmIdentifier.
