@@ -1,9 +1,7 @@
 """Provides functions to read and write global trustpoint-client settings."""
-
 from __future__ import annotations
 
 from trustpoint_client.api import TrustpointClientContext, TrustpointClientError
-
 
 def get_config() -> dict[str, None | str]:
     """Returns the all global configurations as a dictionary.

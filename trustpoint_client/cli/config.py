@@ -10,7 +10,7 @@ from trustpoint_client.api.config import (
     get_default_domain,
     get_device_serial_number,
     set_default_domain,
-    set_device_serial_number,
+    set_device_serial_number
 )
 
 
