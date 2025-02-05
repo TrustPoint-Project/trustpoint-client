@@ -148,3 +148,4 @@ def onboard_with_shared_secret(
 
     inventory_model.domains[domain] = domain_model
     trustpoint_client_context.store_inventory()
+
