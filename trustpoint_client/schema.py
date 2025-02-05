@@ -98,7 +98,7 @@ class DomainModel(BaseModel):
 
     domain_config: DomainConfigModel = ...  # type: ignore[assignment]
 
-    idevid_credential: None | CredentialModel = ...  # type: ignore[assignment]
+    idevid_available: bool = ...  # type: ignore[assignment]
     domain_credential: CredentialModel = ...  # type: ignore[assignment]
     credentials: dict[str, CredentialModel] = ...  # type: ignore[assignment]
     trust_stores: dict[str, str] = ...  # type: ignore[assignment]
@@ -111,8 +111,8 @@ class InventoryModel(BaseModel):
 
     default_domain: None | str = ...  # type: ignore[assignment]
     device_serial_number: None | str = ...  # type: ignore[assignment]
-
     domains: dict[str, DomainModel] = ...  # type: ignore[assignment]
+    idevids: dict[str, CredentialModel] = ...  # type: ignore[assignment]
 
 
 class IdevidCredentialModel(BaseModel):
@@ -120,6 +120,7 @@ class IdevidCredentialModel(BaseModel):
 
     model_config = ConfigDict(strict=True, extra='forbid')
 
+    device_serial_number: str = ...  # type: ignore[assignment]
     private_key: str = ...  # type: ignore[assignment]
     certificate: str = ...  # type: ignore[assignment]
 
@@ -129,11 +130,13 @@ class IdevidHierarchyModel(BaseModel):
 
     model_config = ConfigDict(strict=True, extra='forbid')
 
+    signature_suite: str = ...  # type: ignore[assignment]
     root_ca_certificate: str = ...  # type: ignore[assignment]
     issuing_ca_certificate: str = ...   # type: ignore[assignment]
+    issuing_ca_private_key: str = ...   # type: ignore[assignment]
 
-    issued_idevids: dict[str, IdevidCredentialModel] = ...  # type: ignore[assignment]
-
+    issued_idevids: dict[int, IdevidCredentialModel] = ...  # type: ignore[assignment]
+    device_serial_number_index_mapping: dict[str, int] = ... # type: ignore[assignment]
 
 class IdevidModel(BaseModel):
     """The IDevID model."""
