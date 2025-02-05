@@ -28,25 +28,6 @@ verbose_option = click.option(
 )
 
 
-def handle_exception(func: typing.Callable) -> typing.Callable:
-    """Handles exceptions gracefully for the CLI application.
-
-    Args:
-        func: The decorated function.
-    """
-
-    @wraps(func)
-    @click.pass_context
-    def _wrapper_function(ctx: click.Context, *args: Any, **kwargs: dict[str, Any]) -> Any:
-        try:
-            return ctx.invoke(func, *args, **kwargs)
-        except Exception as exc:
-            err_msg = str(exc)
-            raise click.ClickException(err_msg) from exc
-
-    return _wrapper_function
-
-
 class TrustPointClientCli(click.MultiCommand):
     """Abstraction of the TrustPointClientCli program.
 
@@ -84,8 +65,6 @@ class TrustPointClientCli(click.MultiCommand):
             return ns['list_']
         if name == 'del':
             return ns['del_']
-        if name == 'domain':
-            return ns['domain_']
         return ns[name]
 
 

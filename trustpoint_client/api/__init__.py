@@ -18,12 +18,13 @@ from trustpoint_devid_module.cli import DevIdModule  # type: ignore[import-untyp
 if TYPE_CHECKING:
     from typing import Any
 
-from trustpoint_client.schema import InventoryModel
+from trustpoint_client.schema import InventoryModel, IdevidModel
 
 dirs = PlatformDirs(appname='trustpoint_client', appauthor='trustpoint')
 WORKING_DIR = Path(dirs.user_data_dir)
 INVENTORY_FILE_PATH = WORKING_DIR / Path('inventory.json')
 CONFIG_FILE_PATH = WORKING_DIR / Path('config.json')
+DEMO_IDEVID_FILE_PATH = WORKING_DIR / Path('idevid.json')
 
 
 class TrustpointClientError(Exception):
@@ -161,5 +162,79 @@ class TrustpointClientContext:
         """
         try:
             self.inventory_file_path.write_text(self.inventory_model.model_dump_json())
+        except Exception as exception:
+            raise TrustpointClientError(str(exception)) from exception
+
+
+class DemoIdevidContext:
+    """The Demo IDevID context object provides access to the demo IDevID hierarchies.
+
+    Note:
+        This context is not thread-safe. It is expected that only one of these instances exists and is used at the
+        same time. It is considered sufficient for this PoC type of client at the moment.
+    """
+
+    _demo_idevid_file_path: Path
+    _demo_idevid_model: IdevidModel
+
+    def __init__(self, demo_idevid_file_path: Path = DEMO_IDEVID_FILE_PATH) -> None:
+        """Initializes the DemoIdevidContext object.
+
+        Tries to load the demo IDevID model. If the model file does not exist, it initializes a new
+        empty inventory model.
+
+        Args:
+            demo_idevid_file_path: The path to the demo IDevID model file.
+
+        Raises:
+            TrustpointClientError: If the initialization of the inventory model failed.
+        """
+        self._demo_idevid_file_path = demo_idevid_file_path
+
+        if not self._demo_idevid_file_path.exists():
+            try:
+                Path.mkdir(WORKING_DIR, parents=True, exist_ok=False)
+            except FileExistsError as exception:
+                raise TrustpointClientError(str(exception)) from exception
+
+            inventory = IdevidModel(hierarchies={})
+
+            try:
+                self._demo_idevid_file_path.write_text(inventory.model_dump_json())
+            except Exception as exception:
+                raise TrustpointClientError(str(exception)) from exception
+
+        try:
+            with self._demo_idevid_file_path.open('r') as f:
+                self._demo_idevid_model = IdevidModel.model_validate_json(f.read())
+        except pydantic.ValidationError as exception:
+            raise TrustpointClientError(str(exception)) from exception
+
+    @property
+    def demo_idevid_file_path(self) -> Path:
+        """Gets the demo IDevID file path.
+
+        Returns:
+            The demo IDevID file path.
+        """
+        return self._demo_idevid_file_path
+
+    @property
+    def demo_idevid_model(self) -> IdevidModel:
+        """Gets the demo IDevID model.
+
+        Returns:
+            The demo IDevID model.
+        """
+        return self._demo_idevid_model
+
+    def store_demo_idevid_model(self) -> None:
+        """Stores the current state of the demo IDevID model.
+
+        Raises:
+            TrustpointClientError: If storing the demo IDevID model failed.
+        """
+        try:
+            self.demo_idevid_file_path.write_text(self.demo_idevid_model.model_dump_json())
         except Exception as exception:
             raise TrustpointClientError(str(exception)) from exception
