@@ -140,7 +140,7 @@ def onboard_with_shared_secret(
 
     domain_model = DomainModel(
         domain_config=domain_config_model,
-        idevid_credential=None,
+        idevid_available=False,
         domain_credential=credential_model,
         credentials={},
         trust_stores={}
@@ -149,3 +149,31 @@ def onboard_with_shared_secret(
     inventory_model.domains[domain] = domain_model
     trustpoint_client_context.store_inventory()
 
+
+def onboard_with_idevid(
+        host: str | IPv4Address | IPv6Address,
+        domain: str,
+        idevid_index: int,
+        port: int = 443) -> None:
+    """Onboards the device into a domain using a shared secret.
+
+    This function uses CMP with a password based mac to onboard the device and to acquire a domain credential (LDevID).
+
+    Args:
+        host:
+        domain: The domain to onboard into.
+        idevid_index:
+        port:
+    """
+    trustpoint_client_context = TrustpointClientContext()
+    devid_module = DevIdModule()
+    domain = domain.strip()
+
+    inventory_model = trustpoint_client_context.inventory_model
+    if domain in inventory_model.domains:
+        raise ValueError('Domain already exists.')
+
+    if not inventory_model.idevids:
+        raise ValueError('No idevid available.')
+
+    if
