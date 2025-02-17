@@ -195,7 +195,7 @@ def delete_idevid(hierarchy_name: str, index: int, device_serial_number: str) ->
     hierarchy.device_serial_number_index_mapping.pop(device_serial_number)
     demo_devid_context.store_demo_idevid_model()
 
-def export_idevid(hierarchy_name: str, index: int, device_serial_number: str) -> bytes:
+def export_idevid(hierarchy_name: str, index: int) -> bytes:
     demo_idevid_model = DemoIdevidContext().demo_idevid_model
     hierarchy = demo_idevid_model.hierarchies[hierarchy_name]
     idevid_model = hierarchy.issued_idevids[index]
@@ -219,7 +219,7 @@ def export_trust_store(hierarchy_name: str) -> str:
     demo_devid_context = DemoIdevidContext()
     if hierarchy_name not in demo_devid_context.demo_idevid_model.hierarchies:
         err_msg = f'Hierarchy with name {hierarchy_name} does not exist.'
-        raise ValueError()
+        raise ValueError(err_msg)
     return (
             demo_devid_context.demo_idevid_model.hierarchies[hierarchy_name].issuing_ca_certificate +
             demo_devid_context.demo_idevid_model.hierarchies[hierarchy_name].root_ca_certificate
@@ -244,6 +244,8 @@ def create_idevid(hierarchy_name: str, device_serial_number: str) -> None:
         password=None)
 
     signature_suite = oid.SignatureSuite.from_certificate(issuing_ca_certificate)
+    if signature_suite.algorithm_identifier.hash_algorithm is None:
+        raise ValueError('Incompatible signature suite algorithm found.')
     idevid_private_key = oid.KeyPairGenerator.generate_key_pair_for_private_key(issuing_ca_private_key)
 
     idevid_public_key = idevid_private_key.public_key()

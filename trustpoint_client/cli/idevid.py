@@ -22,11 +22,13 @@ def idevid_inject(file_path: str, password: None | str) -> None:
     """Injects an IDevID credential into the client."""
 
     if isinstance(password, str):
-        password = password.encode()
+        encoded_password = password.encode()
+    else:
+        encoded_password = None
 
     try:
         p12_bytes = Path(file_path).read_bytes()
-        inject_idevid(p12_bytes, password=password)
+        inject_idevid(p12_bytes, password=encoded_password)
         click.echo('Successfully injected IDevID credential into the Trustpoint-Client.')
     except Exception as exception:
         raise click.ClickException(str(exception)) from exception

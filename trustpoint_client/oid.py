@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import enum
 from typing import TYPE_CHECKING, cast
+from unittest import case
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed448, ed25519, rsa, x448, x25519
@@ -426,6 +427,8 @@ class HashAlgorithm(enum.Enum):
     verbose_name: str
     hash_algorithm: type[hashes.HashAlgorithm]
 
+
+
     MD5 = ('1.2.840.113549.2.5', 'MD5', hashes.MD5)
 
     SHA1 = ('1.3.14.3.2.26', 'SHA1', hashes.SHA1)
@@ -468,6 +471,7 @@ class AlgorithmIdentifier(enum.Enum):
     verbose_name: str
     public_key_algo_oid: PublicKeyAlgorithmOid
     padding_scheme: RsaPaddingScheme
+    hash_algorithm: None | HashAlgorithm
 
     RSA_MD5 = (
         '1.2.840.113549.1.1.4',
@@ -662,6 +666,66 @@ class AlgorithmIdentifier(enum.Enum):
         err_msg = f'AlgorithmIdentifier {certificate.signature_algorithm_oid.dotted_string} is unkown.'
         raise ValueError(err_msg)
 
+    @classmethod
+    def from_public_key_alg_and_hash_alg(
+            cls,
+            public_key_algorithm: PublicKeyAlgorithmOid,
+            hash_algorithm: None | HashAlgorithm) -> AlgorithmIdentifier:
+
+        if public_key_algorithm == PublicKeyAlgorithmOid.RSA:
+            match hash_algorithm:
+                case HashAlgorithm.MD5:
+                    return cls.RSA_MD5
+                case HashAlgorithm.SHA1:
+                    return cls.RSA_SHA1
+                case HashAlgorithm.SHA224:
+                    return cls.RSA_SHA224
+                case HashAlgorithm.SHA256:
+                    return cls.RSA_SHA256
+                case HashAlgorithm.SHA384:
+                    return cls.RSA_SHA384
+                case HashAlgorithm.SHA512:
+                    return cls.RSA_SHA512
+                case HashAlgorithm.SHA3_224:
+                    return cls.RSA_SHA3_224
+                case HashAlgorithm.SHA3_256:
+                    return cls.RSA_SHA3_256
+                case HashAlgorithm.SHA3_384:
+                    return cls.RSA_SHA3_384
+                case HashAlgorithm.SHA3_512:
+                    return cls.RSA_SHA3_512
+                case None:
+                    raise ValueError
+
+        if public_key_algorithm == PublicKeyAlgorithmOid.ECC:
+            match hash_algorithm:
+                case HashAlgorithm.SHA1:
+                    return cls.ECDSA_SHA1
+                case HashAlgorithm.SHA224:
+                    return cls.ECDSA_SHA224
+                case HashAlgorithm.SHA256:
+                    return cls.ECDSA_SHA256
+                case HashAlgorithm.SHA384:
+                    return cls.ECDSA_SHA384
+                case HashAlgorithm.SHA512:
+                    return cls.ECDSA_SHA512
+                case HashAlgorithm.SHA3_224:
+                    return cls.ECDSA_SHA3_224
+                case HashAlgorithm.SHA3_256:
+                    return cls.ECDSA_SHA3_256
+                case HashAlgorithm.SHA3_384:
+                    return cls.ECDSA_SHA3_384
+                case HashAlgorithm.SHA3_512:
+                    return cls.ECDSA_SHA3_512
+                case None:
+                    raise ValueError
+
+        if public_key_algorithm == PublicKeyAlgorithmOid.NONE:
+            match hash_algorithm:
+                case None:
+                    return cls.PASSWORD_BASED_MAC
+
+        raise ValueError
 
 class HmacAlgorithm(enum.Enum):
     """HMAC Algorithm Enum."""

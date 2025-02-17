@@ -71,8 +71,8 @@ def idevid_create(hierarchy_name: str, device_serial_number: str) -> None:
 def idevid_create_hierarchy(hierarchy_name: str, algorithm: str, named_curve: str, key_size: int, hash_algorithm: str) -> None:
     """Create an IDevID hierarchy that is able to issue IDevID certificates."""
 
-    public_key_algorithm_oid = cast(oid.PublicKeyAlgorithmOid, oid.PublicKeyAlgorithmOid[algorithm])
-    hash_alg_enum = cast(oid.HashAlgorithm, oid.HashAlgorithm[hash_algorithm])
+    public_key_algorithm_oid = oid.PublicKeyAlgorithmOid[algorithm]
+    hash_alg_enum = oid.HashAlgorithm[hash_algorithm]
 
     if algorithm == 'ECC':
         if named_curve is None:
@@ -178,52 +178,57 @@ def idevid_delete_hierarchy(hierarchy_name: str) -> None:
 
 @idevid.command(name='export')
 @click.option('--hierarchy-name', '-n', type=str, required=True, help='The handle of the hierarchy.')
-@click.option('--device-serial-number', '-d', type=str, required=False, help='The device serial number of the IDevID to delete.')
+@click.option('--device-serial-number', '-d', type=str, required=False, help='The device serial number.')
 @click.option('--index', '-i', type=int, required=False, help='The index of the IDevID to delete.')
-@click.option('--file-path', '-f', type=Path, required=True, help='File path to store the IDevID credential PKCS#12 file in.')
-def idevid_export(hierarchy_name: str, device_serial_number: None | str, index: None | int, file_path: Path) -> None:
+@click.option('--file-path', '-f', type=str, required=True, help='File path to store the IDevID credential PKCS#12 file in.')
+def idevid_export(hierarchy_name: str, device_serial_number: None | str, index: None | int, file_path: str) -> None:
     """Exports the IDevID credential as PKCS#12 file."""
     demo_idevid_model = DemoIdevidContext().demo_idevid_model
     if hierarchy_name not in demo_idevid_model.hierarchies:
-        raise click.ClickException(f'No hierarchy found with name {hierarchy_name}. Nothing to delete.')
-    if device_serial_number is None and index is None:
-        raise click.ClickException('Either the device serial number or the index must be specified.')
+        err_msg = f'No hierarchy found with name {hierarchy_name}. Nothing to delete.'
+        raise click.ClickException(err_msg)
 
     hierarchy = demo_idevid_model.hierarchies[hierarchy_name]
-    if device_serial_number is not None:
+    if device_serial_number is None and index is None:
+        err_msg = f'Either provide the index or device serial number to identify the IDevID to export.'
+        raise click.ClickException(err_msg)
+
+    if device_serial_number:
         if device_serial_number not in hierarchy.device_serial_number_index_mapping:
-            err_msg = (
-                f'No IDevID found with device serial number {device_serial_number} for hierarchy {hierarchy_name}.')
+            err_msg = f'No IDevID found for device serial number {device_serial_number}and hierarchy {hierarchy_name}.'
             raise click.ClickException(err_msg)
-        else:
-            index = hierarchy.device_serial_number_index_mapping[device_serial_number]
-    else:
+        index = hierarchy.device_serial_number_index_mapping[device_serial_number]
+
+    if index:
         if index not in hierarchy.issued_idevids:
-            err_msg = f'No IDevID found with index {index} for hierarchy {hierarchy_name}.'
+            err_msg = f'No IDevID found for index {index} and hierarchy {hierarchy_name}.'
             raise click.ClickException(err_msg)
-        else:
-            device_serial_number = hierarchy.issued_idevids[index].device_serial_number
 
     try:
         p12_bytes = export_idevid(
             hierarchy_name=hierarchy_name,
-            index=index,
-            device_serial_number=device_serial_number,
+            index=index
         )
 
-        file_path.write_bytes(p12_bytes)
+        if not file_path.endswith('.p12') or not file_path.endswith('.pfx'):
+            file_path += '.p12'
+
+        Path(file_path).write_bytes(p12_bytes)
         click.echo(f'IDevID credential exported to {file_path}.')
     except Exception as exception:
         raise click.ClickException(str(exception)) from exception
 
 @idevid.command(name='export-hierarchy')
 @click.option('--hierarchy-name', '-n', type=str, required=True, help='The handle of the hierarchy.')
-@click.option('--file-path', '-f', type=Path, required=True, help='File path to store the trust-store in.')
-def idevid_export_hierarchy(hierarchy_name: str, file_path: Path) -> None:
+@click.option('--file-path', '-f', type=str, required=True, help='File path to store the trust-store in.')
+def idevid_export_hierarchy(hierarchy_name: str, file_path: str) -> None:
     """Exports the Trust-Store of the hierarchy as file."""
 
+    if not file_path.endswith('.pem'):
+        file_path += '.pem'
+
     try:
-        file_path.write_text(export_trust_store(hierarchy_name))
+        Path(file_path).write_text(export_trust_store(hierarchy_name))
         click.echo(f'Trust-Store of hierarchy {hierarchy_name} exported to {file_path}.')
     except Exception as exception:
         raise click.ClickException(str(exception)) from exception

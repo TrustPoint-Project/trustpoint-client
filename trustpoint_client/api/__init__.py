@@ -9,11 +9,11 @@ from typing import TYPE_CHECKING
 import pydantic
 from platformdirs import PlatformDirs
 from prettytable import PrettyTable
-from trustpoint_devid_module import exceptions as devid_exceptions  # type: ignore[import-untyped]
+from trustpoint_devid_module import exceptions as devid_exceptions
 from trustpoint_devid_module import (
-    purge_working_dir_and_inventory as purge_devid_module,  # type: ignore[import-untyped]
+    purge_working_dir_and_inventory as purge_devid_module
 )
-from trustpoint_devid_module.cli import DevIdModule  # type: ignore[import-untyped]
+from trustpoint_devid_module.cli import DevIdModule
 
 if TYPE_CHECKING:
     from typing import Any
@@ -92,7 +92,11 @@ class TrustpointClientContext:
             except FileExistsError as exception:
                 raise TrustpointClientError(str(exception)) from exception
 
-            inventory = InventoryModel(default_domain=None, device_serial_number=None, domains={}, idevids={})
+            inventory = InventoryModel(
+                default_domain=None,
+                device_serial_number=None,
+                domains={},
+                idevids={})
 
             try:
                 INVENTORY_FILE_PATH.write_text(inventory.model_dump_json())
